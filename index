@@ -1,0 +1,3357 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Formación DICO – Asistencia (Admin + Formador)</title>
+
+<!-- Supabase JS v2 -->
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<!-- XLSX -->
+<script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<style>
+:root{
+  --violeta:#a78bfa; --violeta-osc:#7c3aed;
+  --bg:#050617; --bg2:#111827; --card:#17182b;
+  --text:#e8e6ff; --muted:#bfbde6; --border-soft:rgba(167,139,250,.25);
+  --danger:#f97373; --success:#34d399; --warn:#facc15;
+}
+*{box-sizing:border-box;font-family:system-ui,Segoe UI,Roboto,sans-serif;}
+body{
+  margin:0;min-height:100vh;
+  background:radial-gradient(circle at top,var(--bg2),var(--bg));
+  color:var(--text);
+  display:flex;align-items:center;justify-content:center;
+  padding:16px;
+}
+.hidden{display:none!important;}
+.card{
+  width:100%;max-width:480px;
+  background:rgba(23,24,43,.85);
+  border:1px solid var(--border-soft);
+  border-radius:16px;
+  padding:22px;
+  box-shadow:0 20px 45px rgba(0,0,0,.55);
+}
+h1{margin:0 0 6px 0;color:var(--violeta);text-align:center;}
+p{margin:0 0 14px 0;color:var(--muted);text-align:center;font-size:14px;}
+label{display:block;margin-top:10px;color:var(--muted);font-size:12px;}
+input, select, textarea{
+  width:100%;
+  padding:12px;
+  margin-top:8px;
+  border-radius:10px;
+  border:1px solid var(--border-soft);
+  background:#0b0c1a;
+  color:var(--text);
+  font-size:14px;
+}
+input:focus, select:focus, textarea:focus{outline:none;border-color:var(--violeta);}
+button{
+  border:0;border-radius:10px;
+  padding:12px 14px;
+  background:var(--violeta);
+  color:#050617;font-weight:900;
+  cursor:pointer;
+}
+button:hover{background:var(--violeta-osc);}
+button:disabled{opacity:.55;cursor:not-allowed;}
+.badge{
+  display:inline-block;
+  padding:4px 10px;
+  border-radius:999px;
+  border:1px solid var(--border-soft);
+  color:var(--muted);
+  font-size:12px;
+}
+.small{font-size:12px;color:var(--muted);}
+.ok{color:var(--success);font-weight:800;}
+.err{color:var(--danger);font-weight:800;}
+.warn{color:var(--warn);font-weight:800;}
+
+.app{width:100%;max-width:1200px;}
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;margin-bottom:14px;flex-wrap:wrap;
+}
+.titleblock h2{margin:0;font-size:20px;}
+.titleblock .small{margin-top:2px;}
+.pillrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.grid{
+  display:grid;
+  grid-template-columns: 430px 1fr;
+  gap:14px;
+}
+.grid.onecol{ grid-template-columns: 1fr; }
+@media (max-width: 980px){ .grid{grid-template-columns:1fr;} }
+
+.panel{
+  background:rgba(23,24,43,.75);
+  border:1px solid var(--border-soft);
+  border-radius:16px;
+  padding:14px;
+  box-shadow:0 18px 40px rgba(0,0,0,.4);
+}
+.panel h3{margin:0 0 10px 0;color:var(--violeta);}
+hr{border:0;border-top:1px solid var(--border-soft);margin:12px 0;}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.col{flex:1;min-width:160px;}
+.list{display:flex;flex-direction:column;gap:10px;}
+.item{
+  background:rgba(5,6,23,.35);
+  border:1px solid var(--border-soft);
+  border-radius:14px;
+  padding:12px;
+}
+.item b{color:var(--text);}
+.kv{display:grid;grid-template-columns: 140px 1fr;gap:6px;margin-top:6px;}
+.kv div{font-size:12px;color:var(--muted);}
+.kv div:nth-child(odd){color:rgba(191,189,230,.9);}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;}
+pre{
+  white-space:pre-wrap;
+  background:#0b0c1a;
+  border:1px solid var(--border-soft);
+  border-radius:12px;
+  padding:12px;
+  margin:10px 0 0 0;
+  color:var(--text);
+  font-size:12px;
+  overflow:auto;
+  max-height:260px;
+}
+.chip{
+  border:1px solid var(--border-soft);
+  border-radius:999px;
+  padding:6px 10px;
+  font-size:12px;
+  color:var(--muted);
+  background:rgba(5,6,23,.25);
+}
+.tablelike{
+  width:100%;
+  border:1px solid var(--border-soft);
+  border-radius:14px;
+  overflow:hidden;
+}
+.tablelike .tr{
+  display:grid;
+  grid-template-columns: 1fr 120px 120px 120px; /* 4 columnas */
+  gap:10px;
+  padding:10px 12px;
+  border-bottom:1px solid rgba(167,139,250,.18);
+}
+.tablelike .tr:last-child{border-bottom:0;}
+  .tablelike .tr > div{
+  display:flex;
+  align-items:center;
+}
+.tablelike .th{
+  background:rgba(5,6,23,.45);
+  color:var(--muted);
+  font-size:12px;
+  font-weight:800;
+}
+.btnMini{padding:10px 12px;border-radius:10px;font-weight:900;}
+.btnGhost{background:transparent;border:1px solid var(--border-soft);color:var(--text);}
+.btnGhost:hover{background:rgba(167,139,250,.10);}
+.btnDanger{background:transparent;border:1px solid rgba(248,113,113,.65);color:#ffd8d8;}
+.btnDanger:hover{border-color:rgba(248,113,113,1);}
+.btnOk{background:rgba(52,211,153,.95); color:#050617;}
+.btnBad{background:rgba(248,113,113,.95); color:#050617;}
+.btnOk:hover,.btnBad:hover{filter:brightness(1.05);}
+code{color:#fff;}
+
+/* ===== FORMADOR: ocultar panel izquierdo + 1 columna (SIN tocar JS) ===== */
+body.formador .grid{ grid-template-columns: 1fr !important; }
+body.formador #leftPanel{ display:none !important; }
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="login" class="card">
+
+  <h1>Formación DICO</h1>
+  <p>Ingreso al sistema de asistencia</p>
+
+  <label>Correo</label>
+  <input
+    id="email"
+    type="email"
+    placeholder="correo@dico.com.co"
+    autocomplete="username"
+  />
+
+  <label>Contraseña</label>
+  <input
+    id="password"
+    type="password"
+    placeholder="••••••••"
+    autocomplete="current-password"
+  />
+
+  <!-- BOTÓN INGRESAR -->
+  <div class="row" style="margin-top:14px;">
+    <button
+      id="btnLogin"
+      type="button"
+      style="width:100%;"
+      onclick="doLogin()">
+      Ingresar
+    </button>
+  </div>
+
+  <!-- RECUPERAR CONTRASEÑA -->
+  <div class="row" style="margin-top:10px;">
+    <button
+      id="btnForgot"
+      type="button"
+      class="btnMini btnGhost"
+      style="width:100%;"
+      onclick="doForgot()">
+      Recuperar contraseña (crear clave)
+    </button>
+  </div>
+
+  <!-- MENSAJES -->
+  <div
+    id="loginMsg"
+    class="small"
+    style="margin-top:10px;text-align:center;">
+  </div>
+
+</div>
+
+<!-- ✅ RESET PASSWORD (CORRECCIÓN: EXISTE resetBox Y SUS IDS) -->
+<div id="resetBox" class="card hidden">
+  <h1>Restablecer contraseña</h1>
+  <p>Ingresa tu nueva contraseña para finalizar la recuperación</p>
+
+  <label>Nueva contraseña</label>
+  <input id="newPassword" type="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password" />
+
+  <label>Confirmar contraseña</label>
+  <input id="newPassword2" type="password" placeholder="Repite la contraseña" autocomplete="new-password" />
+
+  <div class="row" style="margin-top:14px;">
+    <button id="btnReset" type="button" style="width:100%;">Guardar contraseña</button>
+  </div>
+
+  <div class="row" style="margin-top:10px;">
+    <button id="btnResetBack" type="button" class="btnMini btnGhost" style="width:100%;">Volver al login</button>
+  </div>
+
+  <div id="resetMsg" class="small" style="margin-top:10px;text-align:center;"></div>
+</div>
+
+<!-- APP -->
+<div id="app" class="hidden app">
+  <div class="topbar">
+    <div class="titleblock">
+      <h2 id="panelTitle">Panel</h2>
+      <div class="small" id="whoami">—</div>
+    </div>
+    <div class="pillrow">
+      <span class="badge" id="roleBadge">rol</span>
+
+      <button id="btnRevokeOthers" class="btnMini btnDanger hidden" type="button"
+        title="Cierra sesiones activas en otros dispositivos (no te saca a ti)">
+        Cerrar otras sesiones
+      </button>
+
+      <button id="btnLogout" class="btnMini" type="button">Cerrar sesión</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="panel" id="leftPanel"></div>
+    <div class="panel" id="rightPanel"></div>
+  </div>
+
+  <div class="panel" style="margin-top:14px;">
+    <h3>Estado</h3>
+    <div id="status" class="small">Listo.</div>
+    <pre id="log">(vacío)</pre>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   CONFIGURA AQUÍ TUS DATOS DE SUPABASE
+========================================================= */
+const SUPABASE_URL = "https://bqlltjronzrlgbjjntes.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_j84bjNzsEw1O-zsvliQ4Wg_BhGkSqR_"; // debe estar COMPLETA
+
+const EMP_HEADERS = ["documento","nombre","cargo","area","supervisor","email","estado"];
+const CITE_HEADERS = ["session_id","documento"]; // para carga masiva
+const CERT_HEADERS = ["documento","certificacion","fecha_teorica","fecha_practica"];
+
+/* =========================================================
+   HELPERS
+========================================================= */
+const $ = (id) => document.getElementById(id);
+const $status = $("status");
+const $log = $("log");
+
+function setStatus(html){ $status.innerHTML = html; }
+function setLog(obj){ $log.textContent = (typeof obj === "string") ? obj : JSON.stringify(obj, null, 2); }
+function esc(s){
+  return String(s ?? "")
+    .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+}
+function val(x){ return String(x ?? "").trim(); }
+function normDoc(x){
+  return String(x ?? "")
+    .trim()
+    .replace(/[^\d]/g, "");
+}
+
+function normEmail(x){
+  const s = String(x ?? "").trim().toLowerCase();
+  return s || null;
+}
+
+function todayISO(){
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth()+1).padStart(2,"0");
+  const dd = String(d.getDate()).padStart(2,"0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+function addDaysISO(isoDate, days){
+  const d = new Date(isoDate+"T00:00:00");
+  d.setDate(d.getDate() + days);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth()+1).padStart(2,"0");
+  const dd = String(d.getDate()).padStart(2,"0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+  function parseDateToISO(v){
+  // Devuelve "YYYY-MM-DD" o null
+  if(v === null || v === undefined) return null;
+
+  // Si viene como número (Excel serial) o string numérica
+  const s0 = String(v).trim();
+  if(!s0) return null;
+
+  // 1) Si ya viene ISO yyyy-mm-dd
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s0)) return s0;
+
+  // 2) Si viene dd/mm/yyyy o dd-mm-yyyy
+  const m = s0.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if(m){
+    const dd = String(m[1]).padStart(2,"0");
+    const mm = String(m[2]).padStart(2,"0");
+    const yyyy = m[3];
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  // 3) Excel serial (días desde 1899-12-30)
+  // Nota: muchos xlsx lo traen como número o como string numérica
+  if(/^\d+(\.\d+)?$/.test(s0)){
+    const n = Number(s0);
+    if(isFinite(n) && n > 0){
+      const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+      excelEpoch.setUTCDate(excelEpoch.getUTCDate() + Math.floor(n));
+      const yyyy = excelEpoch.getUTCFullYear();
+      const mm = String(excelEpoch.getUTCMonth()+1).padStart(2,"0");
+      const dd = String(excelEpoch.getUTCDate()).padStart(2,"0");
+      return `${yyyy}-${mm}-${dd}`;
+    }
+  }
+
+  // 4) Último intento: Date()
+  const d = new Date(s0);
+  if(!isNaN(d.getTime())){
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth()+1).padStart(2,"0");
+    const dd = String(d.getDate()).padStart(2,"0");
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  return null;
+}
+
+function downloadTextFile(content, filename, mime){
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a);
+  a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 600);
+}
+
+/* =========================================================
+   DETECCIÓN RESET (desde email)
+========================================================= */
+function isRecoveryFlow(){
+  const h = (window.location.hash || "").toLowerCase();
+  return h.includes("type=recovery") || h.includes("#reset") || h.includes("access_token=");
+}
+function showOnly(view){
+  $("login").classList.toggle("hidden", view !== "login");
+  $("resetBox").classList.toggle("hidden", view !== "reset");
+  $("app").classList.toggle("hidden", view !== "app");
+}
+function goToLogin(){
+  window.location.hash = "";
+  showOnly("login");
+  $("loginMsg").innerHTML = `<span class="small">Listo para iniciar sesión.</span>`;
+}
+
+/* =========================================================
+   CSV / XLSX (robusto)
+========================================================= */
+function parseDelimited(text){
+  text = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const firstLine = (text.split("\n").find(l => l.trim().length) || "");
+  const commas = (firstLine.match(/,/g)||[]).length;
+  const semis  = (firstLine.match(/;/g)||[]).length;
+  const delim = semis > commas ? ";" : ",";
+
+  const rows = [];
+  let row = [];
+  let cur = "";
+  let inQuotes = false;
+
+  for(let i=0;i<text.length;i++){
+    const c = text[i];
+    const n = text[i+1];
+    if(c === '"'){
+      if(inQuotes && n === '"'){ cur += '"'; i++; }
+      else inQuotes = !inQuotes;
+      continue;
+    }
+    if(c === delim && !inQuotes){ row.push(cur); cur=""; continue; }
+    if(c === "\n" && !inQuotes){ row.push(cur); rows.push(row); row=[]; cur=""; continue; }
+    cur += c;
+  }
+  if(cur.length || row.length){ row.push(cur); rows.push(row); }
+
+  const cleaned = rows.map(r => r.map(c => (c ?? "").toString())).filter(r => r.some(c => c.trim() !== ""));
+  return cleaned;
+}
+function parseXLSX(arrayBuffer){
+  if(!window.XLSX) throw new Error("La librería XLSX no cargó (bloqueada). Usa CSV.");
+  const wb = XLSX.read(arrayBuffer, { type: "array" });
+  const sheet = wb.Sheets[wb.SheetNames[0]];
+  const json = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false });
+  return json.map(r => r.map(c => (c ?? "").toString())).filter(r => r.some(c => String(c).trim() !== ""));
+}
+
+/* =========================================================
+   SUPABASE
+========================================================= */
+function getSB(){
+  if(!window.supabase || !window.supabase.createClient){
+    throw new Error("No se cargó Supabase JS. Abre desde Live Server/GitHub Pages o revisa bloqueos.");
+  }
+  window.__sb = window.__sb || window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_PUBLISHABLE_KEY,
+    {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+      }
+    }
+  );
+  return window.__sb;
+}
+
+/* =========================================================
+   AUTH
+========================================================= */
+async function doLogin(){
+  const sb = getSB();
+  const email = val($("email").value);
+  const password = val($("password").value);
+  const btn = $("btnLogin");
+  const msg = $("loginMsg");
+
+  msg.innerHTML = "";
+  if(!email || !password){
+    msg.innerHTML = `<span class="err">Debes ingresar correo y contraseña.</span>`;
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Ingresando...";
+  msg.innerHTML = `<span class="small">Validando...</span>`;
+
+  try{
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    setLog({ login_data: data, login_error: error });
+
+    if(error){
+      msg.innerHTML = `<span class="err">${esc(error.message)}</span>`;
+      return;
+    }
+    if(!data?.session){
+      msg.innerHTML = `<span class="err">No se obtuvo sesión. Revisa credenciales.</span>`;
+      return;
+    }
+
+    await bootApp();
+  }catch(e){
+    msg.innerHTML = `<span class="err">${esc(e.message || e)}</span>`;
+  }finally{
+    btn.disabled = false;
+    btn.textContent = "Ingresar";
+  }
+}
+
+async function doForgot(){
+  const sb = getSB();
+  const email = val($("email").value);
+  const msg = $("loginMsg");
+  msg.innerHTML = "";
+
+  if(!email){
+    msg.innerHTML = `<span class="err">Escribe el correo en el campo Correo.</span>`;
+    return;
+  }
+
+  try{
+    const redirectTo = `${window.location.origin}${window.location.pathname}#reset`;
+    const { data, error } = await sb.auth.resetPasswordForEmail(email, { redirectTo });
+    setLog({ reset_data: data, reset_error: error, redirectTo });
+
+    if(error){
+      msg.innerHTML = `<span class="err">${esc(error.message)}</span>`;
+      return;
+    }
+    msg.innerHTML = `<span class="ok">Listo.</span> Revisa tu correo para crear la contraseña y luego intenta ingresar.`;
+  }catch(e){
+    msg.innerHTML = `<span class="err">${esc(e.message || e)}</span>`;
+  }
+}
+
+async function doLogout(){
+  const sb = getSB();
+  await sb.auth.signOut();
+  location.reload();
+}
+
+async function doRevokeOtherSessions(){
+  const sb = getSB();
+  const ok = confirm("Esto cerrará sesiones activas en otros dispositivos para tu usuario.\n\n¿Continuar?");
+  if(!ok) return;
+
+  try{
+    setStatus("Cerrando otras sesiones...");
+    const { error } = await sb.auth.signOut({ scope: "others" });
+    if(error) throw error;
+    setStatus(`<span class="ok">Listo.</span> Otras sesiones cerradas.`);
+    setLog({ revoke_other_sessions: "ok" });
+  }catch(e){
+    setStatus(`<span class="err">Error:</span> ${esc(e.message || e)}`);
+    setLog(e);
+  }
+}
+
+async function doResetPassword(){
+  const sb = getSB();
+  const msg = $("resetMsg");
+  const btn = $("btnReset");
+
+  const p1 = val($("newPassword").value);
+  const p2 = val($("newPassword2").value);
+
+  msg.innerHTML = "";
+
+  if(!p1 || p1.length < 6){
+    msg.innerHTML = `<span class="err">Mínimo 6 caracteres.</span>`;
+    return;
+  }
+  if(p1 !== p2){
+    msg.innerHTML = `<span class="err">Las contraseñas no coinciden.</span>`;
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Guardando...";
+
+  try{
+    const { data: sess } = await sb.auth.getSession();
+    if(!sess?.session){
+      msg.innerHTML = `<span class="err">El enlace expiró o es inválido.</span><br/><span class="small">Vuelve a pulsar "Recuperar contraseña" y usa el correo más reciente.</span>`;
+      return;
+    }
+
+    const { data, error } = await sb.auth.updateUser({ password: p1 });
+    setLog({ updateUser_data: data, updateUser_error: error });
+
+    if(error){
+      msg.innerHTML = `<span class="err">${esc(error.message)}</span>`;
+      return;
+    }
+
+    msg.innerHTML = `<span class="ok">Contraseña actualizada.</span> Ya puedes iniciar sesión.`;
+    setTimeout(() => { goToLogin(); }, 1200);
+
+  }catch(e){
+    msg.innerHTML = `<span class="err">${esc(e.message || e)}</span>`;
+    setLog(e);
+  }finally{
+    btn.disabled = false;
+    btn.textContent = "Guardar contraseña";
+  }
+}
+
+/* =========================================================
+   PROFILE
+========================================================= */
+async function getProfile(user){
+  const sb = getSB();
+  const { data, error } = await sb
+    .from("profiles")
+    .select("user_id,nombre,rol,activo")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if(error) throw error;
+
+  if(!data){
+    return { user_id: user.id, nombre: (user.email||"usuario").split("@")[0], rol: "formador", activo: true, __missing:true };
+  }
+  return data;
+}
+
+/* =========================================================
+   UI
+========================================================= */
+function setPanels(role){
+  if(role === "super_admin"){
+    $("leftPanel").innerHTML = renderAdminLeft();
+    $("rightPanel").innerHTML = renderAdminRight();
+    wireAdminHandlers();
+  }else{
+    $("leftPanel").innerHTML = renderTrainerLeft();
+    $("rightPanel").innerHTML = renderTrainerRight();
+    wireTrainerHandlers();
+  }
+}
+
+function renderAdminLeft(){
+  return `
+    <h3>Asignación de entrenamientos</h3>
+    <div class="small">Crea entrenamientos, sesiones, carga personal y cita empleados.</div>
+    <hr/>
+
+    <div class="item">
+      <b>1) Cargar personal (employees)</b>
+      <div class="small">Sube CSV o XLSX. Encabezados requeridos: <code>${EMP_HEADERS.join(", ")}</code></div>
+      <div class="actions" style="margin-top:8px;">
+        <button id="btnEmpTemplateCSV" class="btnMini btnGhost" type="button">Descargar plantilla CSV</button>
+        <button id="btnEmpTemplateXLSX" class="btnMini btnGhost" type="button">Plantilla XLSX</button>
+      </div>
+      <div class="row" style="margin-top:10px;">
+        <input id="empFile" type="file" accept=".csv,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" />
+        <button id="btnEmpUpload" class="btnMini" type="button">Subir e insertar</button>
+      </div>
+      <div id="empMsg" class="small" style="margin-top:8px;"></div>
+    </div>
+
+   <hr/>
+
+<div class="item">
+  <b>6) Cargar certificaciones (Excel/CSV)</b>
+  <div class="small">
+    Archivo con columnas: <code>documento, certificacion, fecha_teorica, fecha_practica</code>
+  </div>
+
+  <div class="actions" style="margin-top:8px;">
+    <button id="btnCertTemplateCSV" class="btnMini btnGhost" type="button">Plantilla CSV</button>
+    <button id="btnCertTemplateXLSX" class="btnMini btnGhost" type="button">Plantilla XLSX</button>
+  </div>
+
+  <div class="row" style="margin-top:10px;">
+    <input id="certFile" type="file"
+      accept=".csv,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" />
+    <button id="btnCertUpload" class="btnMini" type="button">Cargar certificaciones</button>
+  </div>
+
+  <div id="certMsg" class="small" style="margin-top:8px;"></div>
+</div>
+
+
+    <div class="item">
+      <b>2) Crear entrenamiento</b>
+      <div class="small">Solo crea el tipo de capacitación y su duración.</div>
+
+      <label>Nombre del entrenamiento</label>
+      <input id="trNombre" placeholder="Ej: Trabajo en alturas" />
+
+      <div class="row">
+        <div class="col">
+          <label>Duración (días)</label>
+          <input id="trDuracion" type="number" min="1" max="3650" value="1" />
+        </div>
+        <div class="col">
+          <label>¿Certifica?</label>
+          <select id="trCertifica">
+            <option value="true">Sí</option>
+            <option value="false">No</option>
+          </select>
+        </div>
+      </div>
+
+      <button id="btnCreateTraining" style="margin-top:12px;width:100%;" type="button">Guardar entrenamiento</button>
+      <div id="trMsg" class="small" style="margin-top:8px;"></div>
+    </div>
+
+    <hr/>
+
+    <div class="item">
+      <b>3) Crear sesión</b>
+      <div class="small">
+        Pegas el <code>training_id</code>. Luego el sistema genera <b>fechas reales</b> según duración.
+      </div>
+
+      <label>training_id (uuid)</label>
+      <input id="sessionTrainingId" placeholder="Pega aquí el training_id" />
+
+      <div class="row">
+        <div class="col">
+          <label>Fecha inicio</label>
+          <input id="sessionFecha" type="date" />
+        </div>
+        <div class="col">
+          <label>Ciudad</label>
+          <input id="sessionCiudad" placeholder="Ej: Bogotá" />
+        </div>
+      </div>
+
+      <label>Formador</label>
+      <select id="sessionFormador"></select>
+
+      <label>Estado (opcional)</label>
+      <input id="sessionEstado" placeholder="programada" value="programada" />
+
+      <button id="btnCreateSession" style="margin-top:12px;width:100%;" type="button">Crear sesión</button>
+      <div id="sessionMsg" class="small" style="margin-top:8px;"></div>
+
+      <div id="datesBox" class="hidden" style="margin-top:12px;">
+        <b style="display:block;margin-bottom:6px;">Fechas del entrenamiento</b>
+        <div class="small">
+          Se crean según <code>trainings.vigencia_dias</code>. Puedes editar fechas y guardar.
+        </div>
+        <div id="datesList" class="list" style="margin-top:10px;"></div>
+        <button id="btnSaveDates" class="btnMini btnGhost" style="margin-top:10px;width:100%;" type="button">Guardar fechas</button>
+        <div id="datesMsg" class="small" style="margin-top:8px;"></div>
+      </div>
+    </div>
+
+    <hr/>
+
+    <div class="item">
+      <b>4) Citar empleados a una sesión</b>
+      <div class="small">Selecciona sesión, busca empleado y cita.</div>
+
+      <label>Sesión</label>
+      <select id="citeSession"></select>
+
+      <div class="row">
+        <div class="col">
+          <label>Buscar empleado (documento o nombre)</label>
+          <input id="empSearch" placeholder="Ej: 123456 o Juan" />
+        </div>
+        <div class="col" style="min-width:180px;">
+          <label>&nbsp;</label>
+          <button id="btnSearchEmp" class="btnMini btnGhost" type="button">Buscar</button>
+        </div>
+      </div>
+
+      <div id="empResults" class="list" style="margin-top:10px;"></div>
+      <div id="citeMsg" class="small" style="margin-top:8px;"></div>
+    </div>
+
+    <hr/>
+
+    <div class="item">
+      <b>5) Registrar incapacidad (Super Admin)</b>
+      <div class="small">Registra incapacidad por <b>documento</b>.</div>
+
+      <label>Documento</label>
+      <input id="incDoc" placeholder="Ej: 1030123456" />
+
+      <div class="row">
+        <div class="col">
+          <label>Desde</label>
+          <input id="incDesde" type="date" />
+        </div>
+        <div class="col">
+          <label>Hasta</label>
+          <input id="incHasta" type="date" />
+        </div>
+      </div>
+
+      <label>Observación (opcional)</label>
+      <input id="incObs" placeholder="Ej: Incapacidad médica / ARL / Accidente" />
+
+      <div class="actions" style="margin-top:10px;">
+        <button id="btnIncSave" class="btnMini" type="button">Registrar / Actualizar</button>
+        <button id="btnIncClear" class="btnMini btnDanger" type="button">Quitar incapacidad</button>
+      </div>
+
+      <div id="incMsg" class="small" style="margin-top:8px;"></div>
+    </div>
+
+    <hr/>
+
+    <div class="item">
+      <b>4B) Carga masiva de citaciones (Excel/CSV)</b>
+      <div class="small">Archivo con columnas: <code>${CITE_HEADERS.join(", ")}</code></div>
+      <div class="actions" style="margin-top:8px;">
+        <button id="btnCiteTemplateCSV" class="btnMini btnGhost" type="button">Plantilla CSV</button>
+        <button id="btnCiteTemplateXLSX" class="btnMini btnGhost" type="button">Plantilla XLSX</button>
+      </div>
+      <div class="row" style="margin-top:10px;">
+        <input id="citeFile" type="file" accept=".csv,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" />
+        <button id="btnCiteUpload" class="btnMini" type="button">Cargar citaciones</button>
+      </div>
+      <div id="citeUploadMsg" class="small" style="margin-top:8px;"></div>
+    </div>
+  `;
+}
+
+function renderAdminRight(){
+  return `
+    <h3>Sesiones</h3>
+    <div class="small">Lista de sesiones creadas (últimas 50).</div>
+    <hr/>
+    <div class="row">
+      <button id="btnRefreshAdmin" class="btnMini btnGhost" type="button">Actualizar</button>
+
+      <a class="btnMini btnGhost"
+         href="./dashboard_super_admin.html"
+         target="_blank"
+         rel="noopener"
+         style="display:inline-block;text-decoration:none;text-align:center;">
+        Ver Dashboard
+      </a>
+
+      <!-- ✅ NUEVO: Dashboard Certificaciones -->
+      <a class="btnMini btnGhost"
+         href="./dashbord_certificaciones.html"
+         target="_blank"
+         rel="noopener"
+         style="display:inline-block;text-decoration:none;text-align:center;">
+        📊 Certificaciones
+      </a>
+    </div>
+    <div id="adminSessions" class="list" style="margin-top:12px;"></div>
+  `;
+}
+
+
+function renderTrainerLeft(){
+  return `
+    <h3>Formador</h3>
+    <div class="small">Verás tus sesiones y marcarás asistencia por fecha real.</div>
+    <hr/>
+    <div class="item">
+      <b>Acciones</b>
+      <div class="actions">
+        <button id="btnRefreshTrainer" class="btnMini btnGhost" type="button">Actualizar</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderTrainerRight(){
+  return `
+    <h3>Mis sesiones</h3>
+    <div class="small">Sesiones donde tú eres el formador. Selecciona la fecha y marca asistencia.</div>
+    <hr/>
+
+    <h3>⚠️ Alertas de abandono</h3>
+    <div class="small">
+      Personas con <b>3 o más días consecutivos</b> sin asistencia en sesiones multidiarias (solo tus sesiones).
+    </div>
+
+    <div class="tablelike" style="margin-top:10px;" id="absenceAlertsTrainer">
+      <div class="tr th" style="grid-template-columns: 1fr 120px 1fr 120px 120px 70px;">
+        <div>Empleado</div>
+        <div>Documento</div>
+        <div>Sesión</div>
+        <div>Desde</div>
+        <div>Hasta</div>
+        <div>Días</div>
+      </div>
+    </div>
+
+    <hr/>
+    <div id="trainerSessions" class="list"></div>
+  `;
+}
+
+
+/* =========================================================
+   BOOT
+========================================================= */
+let STATE = { user:null, profile:null };
+
+async function bootApp(){
+  const sb = getSB();
+  const { data: { session } } = await sb.auth.getSession();
+
+  if(!session){
+    showOnly("login");
+    $("loginMsg").innerHTML = `<span class="small">Listo para iniciar sesión.</span>`;
+    return;
+  }
+
+  const user = session.user;
+  const profile = await getProfile(user);
+
+  STATE.user = user;
+  STATE.profile = profile;
+
+  showOnly("app");
+
+  $("whoami").textContent = `${user.email}  ·  ${profile.nombre || ""}  ·  uid: ${user.id}`;
+  $("roleBadge").textContent = profile.rol || "formador";
+  $("panelTitle").textContent = (profile.rol === "super_admin") ? "Módulo: Asignación de entrenamientos" : "Panel Formador";
+
+  document.body.classList.toggle("formador", profile.rol !== "super_admin");
+
+  $("btnLogout").onclick = doLogout;
+
+  if(profile.rol === "super_admin"){
+    $("btnRevokeOthers").classList.remove("hidden");
+    $("btnRevokeOthers").onclick = doRevokeOtherSessions;
+  }else{
+    $("btnRevokeOthers").classList.add("hidden");
+  }
+
+  setPanels(profile.rol);
+
+  if(profile.__missing){
+    setStatus(`<span class="warn">Aviso:</span> No existe tu fila en <code>profiles</code>.`);
+  }else{
+    setStatus(`<span class="ok">Sesión activa.</span>`);
+  }
+
+  setLog({ session_user: user, profile });
+
+  if(profile.rol === "super_admin"){
+    await adminInit();
+  }else{
+    await trainerInit();
+  }
+}
+async function adminInit(){
+  await adminRefreshAll();
+}
+
+async function adminRefreshAll(){
+  await adminLoadFormadores();
+  await adminLoadSessions();
+  await adminLoadSessionSelects();
+}
+
+/* Carga formadores al select de creación de sesión */
+async function adminLoadFormadores(){
+  const sb = getSB();
+  const sel = $("sessionFormador");
+  if(!sel) return;
+
+  sel.innerHTML = `<option value="">Cargando...</option>`;
+
+  const { data, error } = await sb
+    .from("profiles")
+    .select("user_id,nombre,rol,activo")
+    .eq("rol","formador")
+    .eq("activo", true)
+    .order("nombre", { ascending:true });
+
+  if(error){
+    sel.innerHTML = `<option value="">(error)</option>`;
+    setStatus(`<span class="err">Error cargando formadores:</span> ${esc(error.message)}`);
+    setLog(error);
+    return;
+  }
+
+  if(!data?.length){
+    sel.innerHTML = `<option value="">(No hay formadores)</option>`;
+    return;
+  }
+
+  sel.innerHTML =
+    `<option value="">Selecciona formador...</option>` +
+    data.map(f => `<option value="${esc(f.user_id)}">${esc(f.nombre || f.user_id)}</option>`).join("");
+}
+
+/* =========================================================
+   ADMIN
+========================================================= */
+function wireAdminHandlers(){
+
+  // ✅ INCAPACIDAD: enlazar botones SIEMPRE (NO dentro de otro onclick)
+  $("btnIncSave").onclick  = adminSaveIncapacity;
+  $("btnIncClear").onclick = adminClearIncapacity;
+
+  $("btnEmpTemplateCSV").onclick = () => {
+    const csv = EMP_HEADERS.join(",") + "\n";
+    downloadTextFile(csv, "plantilla_empleados.csv", "text/csv;charset=utf-8");
+    setStatus(`<span class="ok">Plantilla CSV descargada.</span>`);
+    setLog(csv);
+  };
+
+  $("btnEmpTemplateXLSX").onclick = () => {
+    try{
+      if(!window.XLSX) throw new Error("XLSX bloqueado. Usa la plantilla CSV.");
+      const ws = XLSX.utils.aoa_to_sheet([EMP_HEADERS]);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "plantilla");
+      const out = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      const blob = new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "plantilla_empleados.xlsx";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url), 600);
+      setStatus(`<span class="ok">Plantilla XLSX descargada.</span>`);
+      setLog({ headers: EMP_HEADERS });
+    }catch(e){
+      setStatus(`<span class="err">Error:</span> ${esc(e.message || e)}`);
+      setLog(e);
+    }
+  };
+
+  $("btnCiteTemplateCSV").onclick = () => {
+    const csv = CITE_HEADERS.join(",") + "\n";
+    downloadTextFile(csv, "plantilla_citaciones.csv", "text/csv;charset=utf-8");
+    setStatus(`<span class="ok">Plantilla citaciones CSV descargada.</span>`);
+    setLog(csv);
+  };
+
+  $("btnCiteTemplateXLSX").onclick = () => {
+    try{
+      if(!window.XLSX) throw new Error("XLSX bloqueado. Usa CSV.");
+      const ws = XLSX.utils.aoa_to_sheet([CITE_HEADERS]);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "citaciones");
+      const out = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      const blob = new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "plantilla_citaciones.xlsx";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url), 600);
+      setStatus(`<span class="ok">Plantilla citaciones XLSX descargada.</span>`);
+      setLog({ headers: CITE_HEADERS });
+    }catch(e){
+      setStatus(`<span class="err">Error:</span> ${esc(e.message || e)}`);
+      setLog(e);
+    }
+  };
+
+  $("btnEmpUpload").onclick = adminUploadEmployees;
+  $("btnCreateTraining").onclick = adminCreateTraining;
+  $("btnCreateSession").onclick = adminCreateSession;
+  $("btnSaveDates").onclick = adminSaveSessionDates;
+  $("btnRefreshAdmin").onclick = adminRefreshAll;
+  $("btnSearchEmp").onclick = adminSearchEmployees;
+  $("btnCiteUpload").onclick = adminUploadCitations;
+  $("btnCertTemplateCSV").onclick = () => {
+    const csv = CERT_HEADERS.join(",") + "\n";
+    downloadTextFile(csv, "plantilla_certificaciones.csv", "text/csv;charset=utf-8");
+    setStatus(`<span class="ok">Plantilla certificaciones CSV descargada.</span>`);
+    setLog(csv);
+  };
+
+  $("btnCertTemplateXLSX").onclick = () => {
+    try{
+      if(!window.XLSX) throw new Error("XLSX bloqueado. Usa CSV.");
+      const ws = XLSX.utils.aoa_to_sheet([CERT_HEADERS]);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "certificaciones");
+      const out = XLSX.write(wb, { bookType:"xlsx", type:"array" });
+      const blob = new Blob([out], { type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "plantilla_certificaciones.xlsx";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url), 600);
+      setStatus(`<span class="ok">Plantilla certificaciones XLSX descargada.</span>`);
+      setLog({ headers: CERT_HEADERS });
+    }catch(e){
+      setStatus(`<span class="err">Error:</span> ${esc(e.message || e)}`);
+      setLog(e);
+    }
+  };
+
+  $("btnCertUpload").onclick = adminUploadCertifications;
+
+}
+
+
+async function adminLoadSessions(){
+  const sb = getSB();
+  const cont = $("adminSessions");
+  if(!cont) return;
+
+  cont.innerHTML = `<div class="small">Cargando...</div>`;
+
+  try{
+    // 1) traer sesiones (últimas 50)
+    const { data, error } = await sb
+      .from("sessions")
+      .select(`id, fecha, ciudad, estado, training_id, formador_user_id, trainings ( nombre )`)
+      .order("fecha", { ascending:false })
+      .limit(50);
+
+    if(error) throw error;
+
+    if(!data?.length){
+      cont.innerHTML = `<div class="item"><div class="small">No hay sesiones.</div></div>`;
+      return;
+    }
+
+    // 2) separar abiertas/cerradas
+    const abiertas = data.filter(s => String(s.estado || "").toLowerCase() !== "cerrada");
+    const cerradas = data.filter(s => String(s.estado || "").toLowerCase() === "cerrada");
+
+    // 3) renderer de cada tarjeta
+    const renderSessionItem = (s) => {
+      const trName = s.trainings?.nombre || "Entrenamiento";
+      const est = String(s.estado || "").toLowerCase();
+
+      return `
+        <div class="item">
+          <div class="row" style="justify-content:space-between;">
+            <div><b>${esc(trName)}</b></div>
+            <span class="chip">${esc(s.estado || "—")}</span>
+          </div>
+
+          <div class="small" style="margin-top:6px;">
+            Sesión · ${esc(s.fecha)} · ${esc(s.ciudad || "")}
+          </div>
+
+          <div class="kv">
+            <div>session_id</div><div><code>${esc(s.id)}</code></div>
+            <div>training_id</div><div><code>${esc(s.training_id || "")}</code></div>
+            <div>formador_user_id</div><div><code>${esc(s.formador_user_id || "")}</code></div>
+          </div>
+
+          <div class="actions">
+            ${
+              (est === "cerrada")
+              ? `<button class="btnMini btnGhost" type="button" onclick="adminSetSessionStatus('${s.id}','programada')">Reabrir</button>`
+              : `<button class="btnMini btnGhost" type="button" onclick="adminSetSessionStatus('${s.id}','cerrada')">Cerrar sesión</button>`
+            }
+
+            <button class="btnMini btnGhost" type="button" onclick="adminOpenAddDay('${s.id}')">➕ Agregar días</button>
+
+            <button class="btnMini btnDanger" type="button" onclick="adminDeleteSession('${s.id}')">Eliminar sesión</button>
+          </div>
+
+          <div id="addDay_${s.id}" class="hidden" style="margin-top:10px;">
+            <div class="small"><b>Agregar día a esta sesión</b></div>
+
+            <div class="row" style="margin-top:8px;">
+              <div class="col">
+                <label>Nueva fecha</label>
+                <input id="addDate_${s.id}" type="date" />
+              </div>
+              <div class="col">
+                <label>Tema visto (opcional)</label>
+                <input id="addTema_${s.id}" placeholder="Ej: práctica / evaluación" />
+              </div>
+            </div>
+
+            <div class="row" style="margin-top:8px;">
+              <button class="btnMini btnGhost" type="button" onclick="adminAddDay('${s.id}')">Guardar día</button>
+              <button class="btnMini btnDanger" type="button" onclick="adminCloseAddDay('${s.id}')">Cerrar</button>
+            </div>
+
+            <div id="addMsg_${s.id}" class="small" style="margin-top:6px;"></div>
+          </div>
+        </div>
+      `;
+    };
+
+    // 4) pintar: abiertas arriba, cerradas abajo
+    cont.innerHTML = `
+      <div class="item" style="border-style:dashed;">
+        <b>✅ Abiertas (${abiertas.length})</b>
+        <div class="small">Sesiones que aún puedes cerrar.</div>
+      </div>
+      ${abiertas.map(renderSessionItem).join("")}
+
+      <div style="height:10px;"></div>
+
+      <div class="item" style="border-style:dashed; opacity:.9;">
+        <b>📁 Cerradas (${cerradas.length})</b>
+        <div class="small">Histórico (ya cerradas).</div>
+      </div>
+      ${cerradas.map(renderSessionItem).join("")}
+    `;
+
+  }catch(e){
+    cont.innerHTML = `
+      <div class="item">
+        <div class="small"><span class="err">Error cargando sesiones:</span> ${esc(e.message || e)}</div>
+      </div>
+    `;
+    setStatus(`<span class="err">Error cargando sesiones.</span>`);
+    setLog(e);
+  }
+}
+
+
+async function adminLoadSessionSelects(){
+  const sb = getSB();
+  const sel = $("citeSession");
+  sel.innerHTML = `<option value="">Cargando sesiones...</option>`;
+
+   const { data, error } = await sb
+  .from("sessions")
+  .select(`id,fecha,ciudad,estado, trainings ( nombre )`)
+  .not("estado","eq","cerrada")
+  .order("fecha", { ascending:false })
+  .limit(150);
+
+
+  if(error){
+    sel.innerHTML = `<option value="">(error)</option>`;
+    setStatus(`<span class="err">Error selector sesiones:</span> ${esc(error.message)}`);
+    setLog(error);
+    return;
+  }
+
+  if(!data?.length){
+    sel.innerHTML = `<option value="">(No hay sesiones)</option>`;
+    return;
+  }
+
+  sel.innerHTML = `<option value="">Selecciona sesión...</option>` + data.map(s => {
+    const trName = s.trainings?.nombre || "Entrenamiento";
+    const tag = `${trName} · ${s.fecha} · ${s.ciudad || ""} · ${s.id}`;
+    return `<option value="${s.id}">${esc(tag)}</option>`;
+  }).join("");
+}
+
+/* ===== ADMIN FUNCIONALES (NO PLACEHOLDERS) ===== */
+async function adminCreateTraining(){
+  const sb = getSB();
+  const nombre = val($("trNombre").value);
+  const vigencia = Number($("trDuracion").value || 1);
+  const certifica = $("trCertifica").value === "true";
+  const msg = $("trMsg");
+  msg.innerHTML = "";
+
+  if(!nombre){
+    msg.innerHTML = `<span class="err">Debes ingresar el nombre.</span>`;
+    return;
+  }
+  const vigencia_dias = Math.max(1, isFinite(vigencia)?vigencia:1);
+
+  $("btnCreateTraining").disabled = true;
+  $("btnCreateTraining").textContent = "Guardando...";
+
+  try{
+    const { data, error } = await sb
+      .from("trainings")
+      .insert({ nombre, vigencia_dias, certifica })
+      .select("id,nombre,vigencia_dias,certifica")
+      .single();
+
+    if(error) throw error;
+
+    msg.innerHTML = `<span class="ok">Entrenamiento creado.</span> training_id: <code>${esc(data.id)}</code>`;
+    setStatus(`<span class="ok">Entrenamiento guardado.</span>`);
+    setLog({ training_created: data });
+
+    $("trNombre").value = "";
+    $("trDuracion").value = 1;
+    $("trCertifica").value = "true";
+
+    await adminRefreshAll();
+
+  }catch(e){
+    msg.innerHTML = `<span class="err">Error:</span> ${esc(e.message || e)}`;
+    setStatus(`<span class="err">No se pudo crear entrenamiento.</span>`);
+    setLog(e);
+  }finally{
+    $("btnCreateTraining").disabled = false;
+    $("btnCreateTraining").textContent = "Guardar entrenamiento";
+  }
+}
+
+/* Crear sesión + preparar fechas reales */
+async function adminCreateSession(){
+  const sb = getSB();
+
+  const training_id = val($("sessionTrainingId").value);
+  const fecha = val($("sessionFecha").value);
+  const ciudad = val($("sessionCiudad").value);
+  const formador_user_id = $("sessionFormador").value;
+  const estado = val($("sessionEstado").value) || null;
+  const msg = $("sessionMsg");
+  msg.innerHTML = "";
+
+  if(!training_id){ msg.innerHTML = `<span class="err">Pega el training_id.</span>`; return; }
+  if(!fecha){ msg.innerHTML = `<span class="err">Selecciona la fecha inicio.</span>`; return; }
+  if(!formador_user_id){ msg.innerHTML = `<span class="err">Selecciona el formador.</span>`; return; }
+
+  $("btnCreateSession").disabled = true;
+  $("btnCreateSession").textContent = "Creando...";
+
+  try{
+    const payload = { training_id, fecha, ciudad, formador_user_id, estado };
+    const { data, error } = await sb
+      .from("sessions")
+      .insert(payload)
+      .select("id,training_id,fecha,ciudad,formador_user_id,estado")
+      .single();
+
+    if(error) throw error;
+
+    msg.innerHTML = `<span class="ok">Sesión creada.</span> session_id: <code>${esc(data.id)}</code>`;
+    setStatus(`<span class="ok">Sesión creada.</span> Ahora configura y guarda fechas.`);
+    setLog({ session_created: data });
+
+    await adminPrepareSessionDatesUI(data.id, training_id, fecha);
+    await adminRefreshAll();
+
+  }catch(e){
+    msg.innerHTML = `<span class="err">Error:</span> ${esc(e.message || e)}`;
+    setStatus(`<span class="err">No se pudo crear sesión.</span>`);
+    setLog(e);
+  }finally{
+    $("btnCreateSession").disabled = false;
+    $("btnCreateSession").textContent = "Crear sesión";
+  }
+}
+
+async function adminPrepareSessionDatesUI(session_id, training_id, startDate){
+  const sb = getSB();
+
+  $("datesBox").classList.remove("hidden");
+  $("datesBox").dataset.sessionId = session_id;
+
+  let dur = 1;
+  try{
+    const { data: tr, error } = await sb.from("trainings").select("vigencia_dias").eq("id", training_id).maybeSingle();
+    if(error) throw error;
+    dur = Math.max(1, Number(tr?.vigencia_dias || 1));
+  }catch(e){
+    dur = 1;
+  }
+
+  const list = $("datesList");
+  list.innerHTML = "";
+
+  for(let i=0;i<dur;i++){
+    const iso = addDaysISO(startDate, i);
+    list.insertAdjacentHTML("beforeend", `
+      <div class="item">
+        <div class="row" style="justify-content:space-between;align-items:center;">
+          <div class="small"><b>Día ${i+1}</b></div>
+          <div class="small"><code>${esc(session_id)}</code></div>
+        </div>
+        <label>Fecha</label>
+        <input type="date" class="dateInput" data-idx="${i}" value="${iso}" />
+      </div>
+    `);
+  }
+
+  $("datesMsg").innerHTML = `<span class="small">Sesión: <code>${esc(session_id)}</code>. Revisa/ajusta las fechas y guarda.</span>`;
+}
+
+async function adminSaveSessionDates(){
+  const sb = getSB();
+  const box = $("datesBox");
+  const session_id = box.dataset.sessionId;
+  const msg = $("datesMsg");
+  msg.innerHTML = "";
+
+  if(!session_id){
+    msg.innerHTML = `<span class="err">No hay sesión seleccionada.</span>`;
+    return;
+  }
+
+  const inputs = Array.from(box.querySelectorAll(".dateInput"));
+  const fechas = inputs.map(i => val(i.value)).filter(Boolean);
+
+  if(!fechas.length){
+    msg.innerHTML = `<span class="warn">No hay fechas.</span>`;
+    return;
+  }
+
+  const set = new Set(fechas);
+  if(set.size !== fechas.length){
+    msg.innerHTML = `<span class="err">Hay fechas repetidas. Corrige antes de guardar.</span>`;
+    return;
+  }
+
+  $("btnSaveDates").disabled = true;
+  $("btnSaveDates").textContent = "Guardando...";
+  setStatus("Guardando fechas reales...");
+
+  try{
+    let r = await sb.from("session_dates").delete().eq("session_id", session_id);
+    if(r.error) throw r.error;
+
+    const payload = fechas.map((f, i) => ({
+  session_id,
+  fecha: f,
+  day_number: i + 1   // ✅ día 1,2,3...
+}));
+
+    r = await sb.from("session_dates").insert(payload);
+    if(r.error) throw r.error;
+
+    msg.innerHTML = `<span class="ok">Fechas guardadas.</span> (${fechas.length})`;
+    setStatus(`<span class="ok">Fechas reales guardadas.</span>`);
+    setLog({ session_dates_saved: { session_id, fechas } });
+// ✅ refrescar pantallas para que se vea en todo lado sin recargar
+await adminLoadSessions();
+await adminLoadSessionSelects();
+
+  }catch(e){
+    msg.innerHTML = `<span class="err">Error:</span> ${esc(e.message || e)}`;
+    setStatus(`<span class="err">No se pudieron guardar fechas.</span>`);
+    setLog(e);
+  }finally{
+    $("btnSaveDates").disabled = false;
+    $("btnSaveDates").textContent = "Guardar fechas";
+  }
+}
+
+window.adminDeleteSession = async (session_id) => {
+  if(!confirm("¿Eliminar esta sesión?\n\nSe eliminarán también citaciones, fechas y asistencias asociadas.")) return;
+  const sb = getSB();
+  setStatus(`Eliminando sesión <code>${esc(session_id)}</code>...`);
+
+  try{
+    let r = await sb.from("attendance_dates").delete().eq("session_id", session_id);
+    if(r.error) throw r.error;
+
+    r = await sb.from("citations").delete().eq("session_id", session_id);
+    if(r.error) throw r.error;
+
+    r = await sb.from("session_dates").delete().eq("session_id", session_id);
+    if(r.error) throw r.error;
+
+    r = await sb.from("sessions").delete().eq("id", session_id);
+    if(r.error) throw r.error;
+
+    setStatus(`<span class="ok">Sesión eliminada.</span>`);
+    setLog({ session_deleted: session_id });
+
+    await adminRefreshAll();
+
+  }catch(e){
+    setStatus(`<span class="err">Error eliminando:</span> ${esc(e.message || e)}`);
+    setLog(e);
+  }
+};
+  window.adminOpenAddDay = (session_id) => {
+  const box = document.getElementById(`addDay_${session_id}`);
+  if(!box) return;
+  box.classList.remove("hidden");
+
+  const msg = document.getElementById(`addMsg_${session_id}`);
+  if(msg) msg.innerHTML = "";
+};
+
+window.adminCloseAddDay = (session_id) => {
+  const box = document.getElementById(`addDay_${session_id}`);
+  if(!box) return;
+  box.classList.add("hidden");
+};
+
+window.adminAddDay = async (session_id) => {
+  const sb = getSB();
+
+  const dateEl = document.getElementById(`addDate_${session_id}`);
+  const temaEl = document.getElementById(`addTema_${session_id}`);
+  const msgEl  = document.getElementById(`addMsg_${session_id}`);
+
+  let fechaRaw = (dateEl?.value || "").trim();
+  const tema  = (temaEl?.value || "").trim();
+
+  if(msgEl) msgEl.innerHTML = "";
+
+  if(!fechaRaw){
+    if(msgEl) msgEl.innerHTML = `<span class="warn">Debes seleccionar una fecha.</span>`;
+    return;
+  }
+
+  // ✅ NORMALIZAR A ISO
+  const fechaISO = parseDateToISO(fechaRaw);
+
+  if(!fechaISO){
+    if(msgEl) msgEl.innerHTML = `<span class="err">Fecha inválida.</span>`;
+    return;
+  }
+
+  try{
+    setStatus("Validando fechas actuales...");
+
+    // 1) traer fechas existentes
+    const { data: existing, error: e1 } = await sb
+      .from("session_dates")
+      .select("fecha")
+      .eq("session_id", session_id);
+
+    if(e1) throw e1;
+
+    // 2) normalizar existentes
+    const set = new Set(
+      (existing || []).map(r => String(r.fecha).slice(0,10))
+    );
+
+    // 3) validar duplicado REAL
+    if(set.has(fechaISO)){
+      if(msgEl) msgEl.innerHTML = `<span class="warn">Esa fecha ya existe en la sesión.</span>`;
+      return;
+    }
+
+    setStatus("Guardando nuevo día...");
+
+    // 4) insertar
+    const payload = {
+      session_id,
+      fecha: fechaISO,
+      tema_visto: tema || null
+    };
+
+    const { error: e2 } = await sb
+      .from("session_dates")
+      .insert([payload]);
+
+    if(e2) throw e2;
+
+    if(msgEl) msgEl.innerHTML = `<span class="ok">Día agregado: ${esc(fechaISO)}</span>`;
+    setStatus(`<span class="ok">Día agregado.</span>`);
+
+    // limpiar
+    if(dateEl) dateEl.value = "";
+    if(temaEl) temaEl.value = "";
+
+    // refrescar panel
+    await adminLoadSessions();
+
+  }catch(e){
+    if(msgEl) msgEl.innerHTML = `<span class="err">Error:</span> ${esc(e.message || e)}`;
+    setStatus(`<span class="err">No se pudo agregar día.</span>`);
+    setLog(e);
+  }
+};
+
+ async function adminUploadEmployees(){
+  const sb = getSB();
+  const file = $("empFile").files?.[0];
+  const msg = $("empMsg");
+  msg.innerHTML = "";
+
+  if(!file){ alert("Selecciona un CSV o XLSX."); return; }
+
+  $("btnEmpUpload").disabled = true;
+  $("btnEmpUpload").textContent = "Procesando...";
+  setStatus("Leyendo archivo...");
+
+  try{
+    let rows = [];
+    if(file.name.toLowerCase().endsWith(".xlsx")){
+      const buf = await file.arrayBuffer();
+      rows = parseXLSX(buf);
+    }else{
+      const text = await file.text();
+      rows = parseDelimited(text);
+    }
+
+    if(!rows.length) throw new Error("Archivo vacío.");
+
+    let headers = rows[0]
+      .map(h => val(h).toLowerCase())
+      .map(h => h.replace(/\s+/g," ").trim());
+
+    const missing = EMP_HEADERS.filter(h => !headers.includes(h));
+    if(missing.length){
+      throw new Error(`Faltan columnas requeridas: ${missing.join(", ")}\nEncabezados detectados: ${headers.join(", ")}`);
+    }
+
+    const idx = {};
+    headers.forEach((h,i)=> idx[h]=i);
+
+    const dataRows = rows.slice(1).filter(r => r.some(c => val(c) !== ""));
+    if(!dataRows.length) throw new Error("No hay filas de datos.");
+
+    // 1) construir y NORMALIZAR
+    const raw = dataRows.map(r => ({
+      documento: normDoc(r[idx.documento]),
+      nombre: val(r[idx.nombre]),
+      cargo: val(r[idx.cargo]),
+      area: val(r[idx.area]),
+      supervisor: val(r[idx.supervisor]),
+      email: normEmail(r[idx.email]),
+      estado: val(r[idx.estado]) || "activo"
+    })).filter(x => x.documento && x.nombre);
+
+    if(!raw.length) throw new Error("No hay registros válidos (requiere documento y nombre).");
+
+    // 2) DEDUPLICAR por documento (último gana)
+    const map = new Map();
+    for(const e of raw) map.set(e.documento, e);
+    const payload = [...map.values()];
+
+    const duplicados = raw.length - payload.length;
+    if(duplicados > 0){
+      msg.innerHTML = `<span class="warn">Aviso:</span> Se encontraron ${duplicados} documentos repetidos. Se usó el último registro de cada uno.<br/>`;
+    }
+
+    setStatus(`Insertando/actualizando ${payload.length} empleados...`);
+    setLog({ employees_preview: payload.slice(0, 8), total: payload.length });
+
+    let res = await sb.from("employees")
+      .upsert(payload, { onConflict: "documento" })
+      .select("id,documento,nombre");
+
+    // fallback si tu tabla no tiene unique en documento
+    if(res.error && String(res.error.message||"").toLowerCase().includes("on conflict")){
+      res = await sb.from("employees").insert(payload).select("id,documento,nombre");
+    }
+    if(res.error) throw res.error;
+
+    msg.innerHTML += `<span class="ok">Empleados cargados.</span> (${res.data?.length ?? 0})`;
+    setStatus(`<span class="ok">Empleados cargados.</span>`);
+    setLog({ employees_inserted_or_upserted: res.data });
+
+  }catch(e){
+    msg.innerHTML = `<span class="err">Error:</span> ${esc(e.message || e)}`;
+    setStatus(`<span class="err">Error cargando employees.</span>`);
+    setLog(e);
+  }finally{
+    $("btnEmpUpload").disabled = false;
+    $("btnEmpUpload").textContent = "Subir e insertar";
+  }
+}
+   
+
+ 
+/* =========================================================
+   INCAPACIDADES (SUPER ADMIN)
+   - Guarda/actualiza por documento
+   - Borra por documento
+ Requiere tabla: employee_incapacities(documento, desde, hasta, obs, updated_at)
+   y/o un UNIQUE por documento (recomendado)
+========================================================= */
+
+async function adminSaveIncapacity(){
+  const sb = getSB();
+  const msg = $("incMsg");
+  msg.innerHTML = "";
+
+  // ✅ tú escribes DOCUMENTO
+  const documento = normDoc($("incDoc").value);
+  const desde = val($("incDesde").value);
+  const hasta = val($("incHasta").value);
+  const observacion = val($("incObs").value) || null;
+
+  if(!documento){
+    msg.innerHTML = `<span class="err">Debes ingresar el documento.</span>`;
+    return;
+  }
+  if(!desde || !hasta){
+    msg.innerHTML = `<span class="err">Debes seleccionar Desde y Hasta.</span>`;
+    return;
+  }
+  if(hasta < desde){
+    msg.innerHTML = `<span class="err">La fecha Hasta no puede ser menor que Desde.</span>`;
+    return;
+  }
+
+  $("btnIncSave").disabled = true;
+  $("btnIncSave").textContent = "Guardando...";
+  setStatus("Buscando empleado por documento...");
+
+  try{
+    // 1) Buscar employee_id por documento
+    const { data: emp, error: e0 } = await sb
+      .from("employees")
+      .select("id,documento,nombre")
+      .eq("documento", documento)
+      .maybeSingle();
+
+    if(e0) throw e0;
+    if(!emp?.id){
+      msg.innerHTML = `<span class="err">Documento no existe en employees:</span> ${esc(documento)}`;
+      setStatus(`<span class="err">No encontrado en employees.</span>`);
+      return;
+    }
+
+    // 2) Guardar incapacidad por employee_id
+    setStatus("Guardando incapacidad...");
+
+    const payload = {
+  employee_id: emp.id,     // ✅ lo que usa la BD
+  desde,
+  hasta,
+  observacion
+};
+
+let r = await sb
+  .from("employee_incapacities")
+  .upsert(payload, { onConflict: "employee_id" })
+  .select("id,employee_id,desde,hasta,observacion")
+  .single();
+
+// fallback si no existe unique y supabase se queja
+if (r.error && String(r.error.message || "").toLowerCase().includes("on conflict")) {
+  r = await sb
+    .from("employee_incapacities")
+    .insert(payload)
+    .select("id,employee_id,desde,hasta,observacion")
+    .single();
+}
+if (r.error) throw r.error;
+
+    msg.innerHTML = `<span class="ok">Incapacidad registrada.</span> ${esc(emp.nombre || "")} · ${esc(documento)} (${esc(desde)} → ${esc(hasta)})`;
+    setStatus(`<span class="ok">Incapacidad guardada.</span>`);
+    setLog({ incapacidad_saved: r.data, empleado: emp });
+
+  }catch(e){
+    msg.innerHTML = `<span class="err">Error:</span> ${esc(e.message || e)}`;
+    setStatus(`<span class="err">No se pudo guardar incapacidad.</span>`);
+    setLog(e);
+  }finally{
+    $("btnIncSave").disabled = false;
+    $("btnIncSave").textContent = "Registrar / Actualizar";
+  }
+}
+
+
+
+async function adminClearIncapacity(){
+  const sb = getSB();
+  const msg = $("incMsg");
+  msg.innerHTML = "";
+
+  const documento = normDoc($("incDoc").value);
+  if(!documento){
+    msg.innerHTML = `<span class="err">Debes ingresar el documento.</span>`;
+    return;
+  }
+
+  if(!confirm(`¿Quitar incapacidades del documento ${documento}?`)) return;
+
+  $("btnIncClear").disabled = true;
+  $("btnIncClear").textContent = "Quitando...";
+  setStatus("Buscando empleado por documento...");
+
+  try{
+    // 1) Buscar employee_id por documento
+    const { data: emp, error: e0 } = await sb
+      .from("employees")
+      .select("id,documento,nombre")
+      .eq("documento", documento)
+      .maybeSingle();
+
+    if(e0) throw e0;
+    if(!emp?.id){
+      msg.innerHTML = `<span class="err">Documento no existe en employees:</span> ${esc(documento)}`;
+      setStatus(`<span class="err">No encontrado en employees.</span>`);
+      return;
+    }
+
+    // 2) Borrar por employee_id (borra todas las incapacidades del empleado)
+    setStatus("Eliminando incapacidades...");
+    const { error } = await sb
+      .from("employee_incapacities")
+      .delete()
+      .eq("employee_id", emp.id);
+
+    if(error) throw error;
+
+    msg.innerHTML = `<span class="ok">Incapacidades eliminadas.</span> ${esc(emp.nombre || "")} · ${esc(documento)}`;
+    setStatus(`<span class="ok">Incapacidades eliminadas.</span>`);
+    setLog({ incapacidad_deleted_for_employee: emp.id, empleado: emp });
+
+    $("incDesde").value = "";
+    $("incHasta").value = "";
+    $("incObs").value = "";
+
+  }catch(e){
+    msg.innerHTML = `<span class="err">Error:</span> ${esc(e.message || e)}`;
+    setStatus(`<span class="err">No se pudo quitar incapacidad.</span>`);
+    setLog(e);
+  }finally{
+    $("btnIncClear").disabled = false;
+    $("btnIncClear").textContent = "Quitar incapacidad";
+  }
+}
+
+async function adminSearchEmployees(){
+  const sb = getSB();
+  const q = val($("empSearch").value);
+  const out = $("empResults");
+  out.innerHTML = "";
+
+  if(!q){
+    out.innerHTML = `<div class="small"><span class="warn">Ingresa algo para buscar.</span></div>`;
+    return;
+  }
+
+  setStatus("Buscando empleados...");
+  try{
+    const { data, error } = await sb
+      .from("employees")
+      .select("id,documento,nombre,cargo,area,estado")
+      .or(`documento.eq.${q},nombre.ilike.%${q}%`)
+      .limit(25);
+
+    if(error) throw error;
+
+    if(!data?.length){
+      out.innerHTML = `<div class="small">Sin resultados.</div>`;
+      setStatus(`<span class="warn">Sin resultados.</span>`);
+      return;
+    }
+
+    out.innerHTML = data.map(e => `
+      <div class="item">
+        <b>${esc(e.nombre)}</b>
+        <div class="small">${esc(e.documento)} · ${esc(e.cargo || "")} · ${esc(e.area || "")}</div>
+        <div class="actions">
+          <button class="btnMini" type="button" onclick="adminAddCitation('${e.id}')">Citar a esta sesión</button>
+        </div>
+      </div>
+    `).join("");
+
+    setStatus(`<span class="ok">Resultados:</span> ${data.length}`);
+    setLog({ employee_search: q, results: data });
+
+  }catch(err){
+    out.innerHTML = `<div class="small"><span class="err">Error:</span> ${esc(err.message || err)}</div>`;
+    setStatus(`<span class="err">Error búsqueda empleados.</span>`);
+    setLog(err);
+  }
+}
+
+window.adminAddCitation = async (employee_id) => {
+  const sb = getSB();
+  const session_id = $("citeSession").value;
+  const msg = $("citeMsg");
+
+  if(!session_id){
+    alert("Selecciona una sesión primero.");
+    return;
+  }
+
+  msg.innerHTML = "Citando...";
+  setStatus("Guardando citación...");
+
+  try{
+    const payload = { session_id, employee_id, estado: "citada" };
+
+    let res = await sb.from("citations").upsert(payload, { onConflict: "session_id,employee_id" }).select("id,session_id,employee_id,estado").single();
+    if(res.error && String(res.error.message||"").toLowerCase().includes("on conflict")){
+      res = await sb.from("citations").insert(payload).select("id,session_id,employee_id,estado").single();
+    }
+    if(res.error) throw res.error;
+
+    msg.innerHTML = `<span class="ok">Citado.</span> employee_id: <code>${esc(employee_id)}</code>`;
+    setStatus(`<span class="ok">Empleado citado.</span>`);
+    setLog({ citation_saved: res.data });
+
+  }catch(err){
+    msg.innerHTML = `<span class="err">Error:</span> ${esc(err.message || err)}`;
+    setStatus(`<span class="err">No se pudo citar.</span>`);
+    setLog(err);
+  }
+};
+
+/* =====================
+   ✅ CARGA MASIVA CITACIONES (CORRECCIÓN: ÚNICA FUNCIÓN, FUERA DE wireAdminHandlers)
+   - Acepta archivo con "documento" solamente si eliges una sesión en el combo.
+   - O acepta "session_id,documento" si viene en el archivo.
+===================== */
+async function adminUploadCitations(){
+  const sb = getSB();
+  const file = $("citeFile")?.files?.[0];
+  const msg = $("citeUploadMsg");
+  msg.innerHTML = "";
+
+  if(!file){ alert("Selecciona un CSV o XLSX."); return; }
+
+  const selectedSession = $("citeSession")?.value || ""; // sesión seleccionada (opcional)
+
+  $("btnCiteUpload").disabled = true;
+  $("btnCiteUpload").textContent = "Cargando...";
+  setStatus("Leyendo archivo citaciones...");
+
+  try{
+    let rows = [];
+    if(file.name.toLowerCase().endsWith(".xlsx")){
+      const buf = await file.arrayBuffer();
+      rows = parseXLSX(buf);
+    }else{
+      const text = await file.text();
+      rows = parseDelimited(text);
+    }
+    if(!rows.length) throw new Error("Archivo vacío.");
+    
+
+
+    // encabezados
+    let headers = rows[0].map(h => val(h).toLowerCase()).map(h => h.replace(/\s+/g," ").trim());
+
+    const hasSessionId = headers.includes("session_id");
+    const hasDocumento  = headers.includes("documento");
+
+    // Caso típico: subieron base de empleados por error
+    const looksLikeEmployees =
+      headers.includes("nombre") && headers.includes("cargo") && headers.includes("email") && headers.includes("area");
+
+    if(!hasDocumento){
+      throw new Error(`Falta columna obligatoria: documento. Encabezados detectados: ${headers.join(", ")}`);
+    }
+
+    // Si NO trae session_id, permitimos usar sesión seleccionada
+    if(!hasSessionId){
+      if(!selectedSession){
+        if(looksLikeEmployees){
+          throw new Error(
+            `Estás subiendo el archivo de EMPLEADOS (documento,nombre,cargo,...).\n\n` +
+            `Para CITACIONES necesitas:\n  session_id,documento\n\n` +
+            `O selecciona una sesión en el combo "Sesión" y vuelve a cargar: así usaré esa session_id para todos los documentos.`
+          );
+        }
+        throw new Error(
+          `Falta columna: session_id.\nEncabezados detectados: ${headers.join(", ")}\n\n` +
+          `Soluciones:\n1) Sube archivo con columnas session_id,documento\n2) O selecciona una sesión en el combo "Sesión" y sube un archivo que tenga al menos la columna documento.`
+        );
+      }
+    }
+
+    const idx = {};
+    headers.forEach((h,i)=> idx[h]=i);
+
+    const dataRows = rows.slice(1).filter(r => r.some(c => val(c) !== ""));
+    if(!dataRows.length) throw new Error("No hay filas de datos.");
+
+    // Normalizamos entrada
+    const raw = dataRows.map(r => ({
+      session_id: hasSessionId ? val(r[idx.session_id]) : selectedSession,
+      documento: val(r[idx.documento])
+    })).filter(x => x.session_id && x.documento);
+
+    if(!raw.length) throw new Error("No hay filas válidas. Requiere documento y session_id (en archivo o sesión seleccionada).");
+
+    // Agrupar por session_id
+    const bySession = new Map();
+    for(const r of raw){
+      if(!bySession.has(r.session_id)) bySession.set(r.session_id, []);
+      bySession.get(r.session_id).push(r.documento);
+    }
+
+    let totalInserted = 0;
+    const report = [];
+
+    for(const [session_id, docs] of bySession.entries()){
+      const uniqueDocs = Array.from(new Set(docs)).filter(Boolean);
+
+      // buscar employees por documento
+      const { data: emps, error: e1 } = await sb
+        .from("employees")
+        .select("id,documento")
+        .in("documento", uniqueDocs);
+
+      if(e1) throw e1;
+
+      const mapDocToId = new Map((emps||[]).map(e => [String(e.documento), e.id]));
+
+      const payload = [];
+      const notFound = [];
+
+      for(const doc of uniqueDocs){
+        const employee_id = mapDocToId.get(String(doc));
+        if(!employee_id){ notFound.push(doc); continue; }
+        payload.push({ session_id, employee_id, estado: "citada" });
+      }
+
+      if(payload.length){
+        let r = await sb.from("citations").upsert(payload, { onConflict: "session_id,employee_id" });
+        if(r.error && String(r.error.message||"").toLowerCase().includes("on conflict")){
+          r = await sb.from("citations").insert(payload);
+        }
+        if(r.error) throw r.error;
+
+        totalInserted += payload.length;
+      }
+
+      report.push({ session_id, enviados: uniqueDocs.length, citados: payload.length, no_encontrados: notFound });
+    }
+
+    msg.innerHTML = `<span class="ok">Citaciones cargadas.</span> Filas: ${raw.length}. Citadas: ${totalInserted}.`;
+    setStatus(`<span class="ok">Carga masiva completada.</span>`);
+    setLog({ citations_bulk_report: report });
+
+    // refrescar listas si aplica
+    if(STATE?.profile?.rol === "super_admin"){
+      await adminLoadSessions();
+      await adminLoadSessionSelects();
+    }
+
+  }catch(e){
+    msg.innerHTML = `<span class="err">Error:</span> ${esc(e.message || e)}`;
+    setStatus(`<span class="err">Error carga masiva citaciones.</span>`);
+    setLog(e);
+  }finally{
+    $("btnCiteUpload").disabled = false;
+    $("btnCiteUpload").textContent = "Cargar citaciones";
+  }
+}
+async function adminUploadCertifications(){
+  const sb = getSB();
+  const file = $("certFile")?.files?.[0];
+  const msg = $("certMsg");
+  msg.innerHTML = "";
+
+  if(!file){ alert("Selecciona un CSV o XLSX."); return; }
+
+  $("btnCertUpload").disabled = true;
+  $("btnCertUpload").textContent = "Procesando...";
+  setStatus("Leyendo certificaciones...");
+
+  try{
+    let rows = [];
+    if(file.name.toLowerCase().endsWith(".xlsx")){
+      const buf = await file.arrayBuffer();
+      rows = parseXLSX(buf);
+    }else{
+      const text = await file.text();
+      rows = parseDelimited(text);
+    }
+
+    if(!rows.length) throw new Error("Archivo vacío.");
+
+    let headers = rows[0]
+      .map(h => val(h).toLowerCase())
+      .map(h => h.replace(/\s+/g," ").trim());
+
+    const missing = CERT_HEADERS.filter(h => !headers.includes(h));
+    if(missing.length){
+      throw new Error("Faltan columnas: " + missing.join(", "));
+    }
+
+    const idx = {};
+    headers.forEach((h,i)=> idx[h]=i);
+
+    const dataRows = rows.slice(1).filter(r => r.some(c => val(c) !== ""));
+    if(!dataRows.length) throw new Error("No hay datos.");
+
+    const raw = dataRows.map(r => ({
+  documento: normDoc(r[idx.documento]),
+  certificacion: val(r[idx.certificacion]),
+
+  // ✅ Convertir fechas a formato ISO
+  fecha_teorica: parseDateToISO(r[idx.fecha_teorica]),
+  fecha_practica: parseDateToISO(r[idx.fecha_practica]),
+
+})).filter(x => x.documento && x.certificacion);
+
+
+    if(!raw.length) throw new Error("No hay filas válidas.");
+
+    const docs = [...new Set(raw.map(x => x.documento))];
+    const map = new Map();
+
+    const { data, error } = await sb
+      .from("employees")
+      .select("id,documento")
+      .in("documento", docs);
+
+    if(error) throw error;
+
+    (data||[]).forEach(e => map.set(String(e.documento), e.id));
+
+    const payload = [];
+    const noFound = [];
+
+    for(const r of raw){
+      const id = map.get(String(r.documento));
+      if(!id){ noFound.push(r.documento); continue; }
+
+      payload.push({
+        employee_id: id,
+        certificacion: r.certificacion,
+        fecha_teorica: r.fecha_teorica,
+        fecha_practica: r.fecha_practica
+      });
+    }
+
+    if(!payload.length) throw new Error("Ningún documento encontrado en employees.");
+// 🔎 DEBUG: revisar qué fechas van a Supabase
+setLog({
+  ejemplo_primera_fila: payload[0],
+  total_payload: payload.length,
+  noFound: noFound.length
+});
+
+// ✅ GUARDAR EN SUPABASE
+let r = await sb
+  .from("employee_certifications")
+  .upsert(payload, {
+    onConflict: "employee_id,certificacion"
+  });
+
+if (r.error && String(r.error.message || "").toLowerCase().includes("on conflict")) {
+  r = await sb
+    .from("employee_certifications")
+    .insert(payload);
+}
+
+if (r.error) throw r.error;
+
+    setLog({ cert_upload: { ok: payload.length, noFound: noFound.length } });
+
+  }catch(e){
+    msg.innerHTML = `<span class="err">Error:</span> ${esc(e.message||e)}`;
+    setStatus(`<span class="err">Error en carga.</span>`);
+    setLog(e);
+  }finally{
+    $("btnCertUpload").disabled = false;
+    $("btnCertUpload").textContent = "Cargar certificaciones";
+  }
+}
+async function getTemaForSelectedDate(session_id){
+  const sb = getSB();
+  const box = document.querySelector(`#sess_${CSS.escape(session_id)}`);
+  const selDate = box?.querySelector(".dateSelect");
+  const session_date_id = selDate?.value || null;
+  if(!session_date_id) return { ok:false, tema:"", session_date_id:null };
+
+  const { data, error } = await sb
+    .from("session_dates")
+    .select("tema_visto")
+    .eq("id", session_date_id)
+    .maybeSingle();
+
+  if(error) return { ok:false, tema:"", session_date_id };
+
+  const tema = (data?.tema_visto || "").trim();
+  return { ok: !!tema, tema, session_date_id };
+}
+
+function setTrainerLockedUI(session_id, locked, temaText=""){
+  const box = document.querySelector(`#sess_${CSS.escape(session_id)}`);
+  if(!box) return;
+
+  let warn = box.querySelector(".temaWarn");
+  if(!warn){
+    warn = document.createElement("div");
+    warn.className = "small temaWarn";
+    warn.style.marginTop = "8px";
+    warn.style.padding = "10px";
+    warn.style.border = "1px solid rgba(250,204,21,.35)";
+    warn.style.borderRadius = "12px";
+    warn.style.background = "rgba(250,204,21,.08)";
+    box.insertBefore(warn, box.querySelector(".tablelike"));
+  }
+
+  if(locked){
+    warn.innerHTML = `⚠️ <b>Debes guardar el tema del día</b> antes de marcar asistencia o exportar.`;
+    warn.style.borderColor = "rgba(250,204,21,.35)";
+    warn.style.background = "rgba(250,204,21,.08)";
+  }else{
+    warn.innerHTML = `✅ <b>Tema guardado:</b> ${esc(temaText)}`;
+    warn.style.borderColor = "rgba(52,211,153,.35)";
+    warn.style.background = "rgba(52,211,153,.08)";
+  }
+}
+/* =========================================================
+   FORMADOR (TU BLOQUE TAL COMO LO TRAÍAS)
+========================================================= */
+function lateKey(session_id, employee_id, session_date){
+  return `late|${session_id}|${employee_id}|${session_date}`;
+}
+function isLate(session_id, employee_id, session_date){
+  return localStorage.getItem(lateKey(session_id, employee_id, session_date)) === "1";
+}
+function setLate(session_id, employee_id, session_date, val){
+  if(val) localStorage.setItem(lateKey(session_id, employee_id, session_date), "1");
+  else localStorage.removeItem(lateKey(session_id, employee_id, session_date));
+}
+async function trainerLoadModulesInto(session_id){
+  const sb = getSB();
+  const box = document.querySelector(`#sess_${CSS.escape(session_id)}`);
+  if(!box) return;
+
+  const selMod = box.querySelector(".modSelect");
+  if(!selMod) return;
+
+  selMod.innerHTML = `<option value="">-- Selecciona módulo --</option>`;
+
+  const { data, error } = await sb
+    .from("training_topics")
+    .select("module_code, module_name")
+    .eq("is_active", true)
+    .order("module_code", { ascending: true });
+
+
+  if(error){ console.error(error); return; }
+
+   const seen = new Set();
+  for(const r of (data||[])){
+    // ✅ normalizar clave para evitar duplicados por espacios/mayúsculas
+    const codeRaw = (r.module_code ?? "").toString();
+    const codeKey = codeRaw.trim().toUpperCase();
+    if(!codeKey) continue;
+
+    if(seen.has(codeKey)) continue;
+    seen.add(codeKey);
+
+    const opt = document.createElement("option");
+    // ✅ guardamos el código limpio (sin espacios)
+    opt.value = codeRaw.trim();
+    // ✅ nombre del módulo (si viene vacío, mostramos el código)
+    opt.textContent = (r.module_name ?? "").toString().trim() || codeRaw.trim();
+    selMod.appendChild(opt);
+  }
+
+}
+
+async function trainerLoadTopicsForModule(session_id, module_code){
+  const sb = getSB();
+  const box = document.querySelector(`#sess_${CSS.escape(session_id)}`);
+  if(!box) return;
+
+  const selTopic = box.querySelector(".topicSelect");
+  const selDate  = box.querySelector(".dateSelect");
+  if(!selTopic || !selDate) return;
+
+ selTopic.innerHTML = "";
+
+  selTopic.disabled = true;
+
+  if(!module_code) return;
+
+  const session_date_id = selDate.value;
+  if(!session_date_id){
+    selTopic.innerHTML = `<option value="">(Selecciona primero la fecha)</option>`;
+    return;
+  }
+
+   // ✅ TEMARIO LIBRE: NO depende del day_number
+  const { data, error } = await sb
+    .from("training_topics")
+    .select("id, topic_label")
+    .eq("is_active", true)
+    .eq("module_code", module_code)
+    .order("topic_label", { ascending: true });
+
+  if(error){ console.error(error); return; }
+
+  for(const t of (data||[])){
+    const opt = document.createElement("option");
+    opt.value = t.id;
+    opt.textContent = t.topic_label;
+    selTopic.appendChild(opt);
+  }
+
+  selTopic.disabled = false;
+}
+
+
+function wireTrainerHandlers(){
+  $("btnRefreshTrainer").onclick = trainerInit;
+}
+
+async function trainerInit(){
+  await trainerLoadAbsenceAlerts();   // ✅ alertas primero
+  await trainerLoadSessions();        // ✅ luego sesiones
+}
+ async function trainerLoadAbsenceAlerts(){
+  const sb = getSB();
+  const cont = $("absenceAlertsTrainer");
+  if(!cont) return;
+
+  const grid = "1fr 120px 1fr 120px 120px 70px 90px 120px";
+
+  // header
+  cont.innerHTML = `
+    <div class="tr th" style="grid-template-columns:${grid};">
+      <div>Empleado</div>
+      <div>Documento</div>
+      <div>Sesión</div>
+      <div>Desde</div>
+      <div>Hasta</div>
+      <div>Días</div>
+      <div>Incap.</div>
+      <div>Regresa</div>
+    </div>
+  `;
+
+  try{
+    const { data: { user } } = await sb.auth.getUser();
+    if(!user) throw new Error("No hay usuario autenticado.");
+
+    // 1) traer alertas (vista)
+    const { data: rows, error } = await sb
+      .from("v_absence_alerts_3days_with_incapacity")
+      .select("session_id,employee_id,documento,nombre,start_date,end_date,consecutive_absences,tiene_incapacidad,incapacidad_hasta,regresa_el")
+      .order("end_date", { ascending:false })
+      .limit(200);
+
+    if(error) throw error;
+
+    // ✅ si NO hay alertas en general
+    if(!rows?.length){
+      cont.innerHTML += `
+        <div class="tr" style="grid-template-columns:${grid};">
+          <div class="ok">No hay alertas registradas</div>
+          <div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+        </div>
+      `;
+      return;
+    }
+
+    // 2) traer sesiones para filtrar solo las del formador actual
+    const sessionIds = [...new Set(rows.map(r => r.session_id).filter(Boolean))];
+    if(!sessionIds.length){
+      cont.innerHTML += `
+        <div class="tr" style="grid-template-columns:${grid};">
+          <div class="warn">No se encontraron session_id en las alertas.</div>
+          <div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+        </div>
+      `;
+      return;
+    }
+
+    const { data: sess, error: e2 } = await sb
+      .from("sessions")
+      .select("id, formador_user_id, trainings ( nombre )")
+      .in("id", sessionIds);
+
+    if(e2) throw e2;
+
+    const mine = new Set((sess || [])
+      .filter(s => s.formador_user_id === user.id)
+      .map(s => s.id)
+    );
+
+    const sessionNameMap = new Map((sess || []).map(s => [s.id, (s.trainings?.nombre || "Sesión")]));
+
+    // ✅ filtrar SOLO sesiones del formador actual
+    const filtered = rows.filter(r => mine.has(r.session_id));
+
+    if(!filtered.length){
+      cont.innerHTML += `
+        <div class="tr" style="grid-template-columns:${grid};">
+          <div class="ok">Sin alertas activas en tus sesiones</div>
+          <div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+        </div>
+      `;
+      return;
+    }
+
+    // 3) pintar filas (8 columnas)
+    for(const r of filtered){
+      const inc = (r.tiene_incapacidad === true);
+      const regresa = r.regresa_el || r.incapacidad_hasta || "";
+
+      cont.innerHTML += `
+        <div class="tr" style="grid-template-columns:${grid};">
+          <div>${esc(r.nombre || "")}</div>
+          <div>${esc(r.documento || "")}</div>
+          <div class="small">
+            ${esc(sessionNameMap.get(r.session_id) || "Sesión")}
+            <br/><code>${esc(r.session_id)}</code>
+          </div>
+          <div>${esc(r.start_date || "")}</div>
+          <div>${esc(r.end_date || "")}</div>
+          <div class="warn"><b>${esc(r.consecutive_absences ?? "")}</b></div>
+          <div class="${inc ? "ok" : "small"}">${inc ? "SI" : "NO"}</div>
+          <div class="${inc ? "ok" : "small"}">${inc ? esc(regresa) : "—"}</div>
+        </div>
+      `;
+    }
+
+  }catch(e){
+    cont.innerHTML += `
+      <div class="tr" style="grid-template-columns:${grid};">
+        <div class="err">${esc(e.message || e)}</div>
+        <div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+      </div>
+    `;
+  }
+}
+
+
+
+async function trainerLoadSessions(){
+  const sb = getSB();
+  const cont = $("trainerSessions");
+  cont.innerHTML = `<div class="small">Cargando...</div>`;
+
+  try{
+    const { data: { user } } = await sb.auth.getUser();
+    if(!user) throw new Error("No hay usuario autenticado.");
+
+    const { data: sessions, error } = await sb
+      .from("sessions")
+      .select(`id, fecha, ciudad, estado, training_id, trainings ( nombre )`)
+      .eq("formador_user_id", user.id)
+      .not("estado","eq","cerrada")
+      .order("fecha", { ascending:false })
+      .limit(50);
+
+    if(error) throw error;
+
+    if(!sessions?.length){
+      cont.innerHTML = `<div class="item"><div class="small">No hay sesiones asignadas.</div></div>`;
+      setStatus(`<span class="warn">Sin sesiones.</span>`);
+      return;
+    }
+
+    cont.innerHTML = sessions.map(s => {
+      const trName = s.trainings?.nombre || "Entrenamiento";
+      return `
+        <div class="item" id="sess_${s.id}">
+          <b>${esc(trName)}</b>
+          <div class="small">Sesión · ${esc(s.fecha)} · ${esc(s.ciudad || "")}</div>
+
+          <label>Fecha</label>
+          <select class="dateSelect"></select>
+
+          <hr/>
+
+          <label>Módulo (para esta fecha)</label>
+<select class="modSelect">
+  <option value="">-- Selecciona módulo --</option>
+</select>
+
+<label>Tema (para esta fecha) — puedes seleccionar varios (Ctrl + click)</label>
+<select class="topicSelect" multiple size="6" disabled></select>
+
+<div class="small" style="margin-top:6px;opacity:.9;">
+  Para seleccionar varios: mantén presionado <b>Ctrl</b> y haz clic en cada tema.
+</div>
+
+
+<button class="btnMini btnGhost" type="button"
+  onclick="trainerSaveTema('${s.id}')">
+  Guardar tema
+</button>
+
+
+<div class="small" style="margin-top:6px;opacity:.9;">
+  (Se guarda en <code>session_dates</code> solo para la fecha seleccionada)
+</div>
+
+
+          <div class="actions" style="margin-top:10px;">
+            <button class="btnMini btnGhost" type="button"
+              onclick="trainerExportSessionCSV('${s.id}')">
+              Exportar asistencia (CSV)
+            </button>
+          </div>
+
+          <div class="tablelike" style="margin-top:10px;">
+            <div class="tr th">
+              <div>Empleado</div><div>Asistió</div><div>No</div><div>Tarde</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    for(const s of sessions){
+  await trainerLoadDatesInto(s.id);
+
+  // ✅ cargar módulos al entrar
+  await trainerLoadModulesInto(s.id);
+
+  // ✅ cuando cambie módulo -> cargar temas
+  const box = document.querySelector(`#sess_${CSS.escape(s.id)}`);
+  const selMod = box?.querySelector(".modSelect");
+  if(selMod){
+    selMod.onchange = () => trainerLoadTopicsForModule(s.id, selMod.value);
+  }
+
+  await trainerLoadCitadosInto(s.id);
+}
+
+
+    setStatus(`<span class="ok">Sesiones cargadas.</span>`);
+    setLog({ trainer_sessions: sessions });
+
+  }catch(err){
+    cont.innerHTML = `
+      <div class="item">
+        <div class="small"><span class="err">Error:</span> ${esc(err.message || err)}</div>
+      </div>`;
+    setStatus(`<span class="err">Error cargando sesiones.</span>`);
+    setLog(err);
+  }
+}
+window.trainerRefreshSession = async (session_id) => {
+  await trainerLoadDatesInto(session_id);
+  await trainerLoadCitadosInto(session_id);
+};
+window.trainerSaveTema = async (session_id) => {
+  const sb = getSB();
+  const box = document.querySelector(`#sess_${session_id}`);
+  if(!box) return;
+
+  const selDate = box.querySelector(".dateSelect");
+  const session_date_id = selDate?.value || null;
+
+  const selMod = box.querySelector(".modSelect");
+  const selTopic = box.querySelector(".topicSelect");
+
+  const module_code = selMod?.value || "";
+ const selected = Array.from(selTopic?.selectedOptions || []);
+const topic_ids = selected.map(o => o.value).filter(Boolean);
+const topic_labels = selected.map(o => (o.textContent || "").trim()).filter(Boolean);
+
+if(topic_ids.length === 0){
+  alert("Selecciona al menos 1 tema.");
+  return;
+}
+
+  if(!module_code){
+    alert("Selecciona el módulo.");
+    return;
+  }
+ 
+
+  try{
+    setStatus("Guardando tema del día...");
+
+    const { error } = await sb
+      .from("session_dates")
+      .update({
+  // Guardamos el texto con TODOS los temas seleccionados
+  tema_visto: topic_labels.join(" | "),
+
+  // Y en topic_id dejamos el primero (solo para no romper tu lógica actual)
+  topic_id: topic_ids[0]
+})
+
+      .eq("id", session_date_id);
+
+    if(error) throw error;
+
+    setStatus(`<span class="ok">Tema guardado para el día.</span>`);
+        // ✅ desbloquear inmediatamente
+    const temaInfo2 = await getTemaForSelectedDate(session_id);
+    setTrainerLockedUI(session_id, !temaInfo2.ok, temaInfo2.tema || "");
+    alert("Tema guardado ✅");
+
+    // refresca para que se vea (si luego quieres mostrarlo)
+    await trainerLoadCitadosInto(session_id);
+
+  }catch(e){
+    console.error(e);
+    setStatus(`<span class="err">Error guardando tema:</span> ${esc(e.message || e)}`);
+    alert("No se pudo guardar el tema.");
+  }
+};
+ 
+
+async function trainerLoadDatesInto(session_id){
+  const sb = getSB();
+  const sel = document.querySelector(`#sess_${CSS.escape(session_id)} .dateSelect`);
+  if(!sel) return;
+
+  try{
+    const { data: dates, error } = await sb
+      .from("session_dates")
+      .select("id,fecha")
+      .eq("session_id", session_id)
+      .order("fecha", { ascending:true });
+
+    if(error) throw error;
+
+    if(!dates?.length){
+      sel.innerHTML = `<option value="">(No hay fechas configuradas)</option>`;
+      sel.onchange = null;
+      return;
+    }
+
+    const prev = sel.value;
+    sel.innerHTML = dates.map(d => `<option value="${esc(d.id)}">${esc(d.fecha)}</option>`).join("");
+    if(prev && dates.some(d => d.id === prev)) sel.value = prev;
+
+    sel.onchange = async () => {
+  await trainerLoadCitadosInto(session_id);
+
+  // si ya hay módulo seleccionado, recargar temas para ese día
+  const box = document.querySelector(`#sess_${CSS.escape(session_id)}`);
+  const selMod = box?.querySelector(".modSelect");
+  if(selMod?.value){
+    await trainerLoadTopicsForModule(session_id, selMod.value);
+  }
+};
+
+
+  }catch(e){
+    sel.innerHTML = `<option value="">(Error cargando fechas)</option>`;
+    setLog({ trainer_dates_error: e, session_id });
+  }
+}
+
+async function trainerLoadCitadosInto(session_id){
+  const sb = getSB();
+  const sessBox = document.querySelector(`#sess_${CSS.escape(session_id)}`);
+  if(!sessBox) return;
+
+  const table = sessBox.querySelector(".tablelike");
+  const sel = sessBox.querySelector(".dateSelect");
+
+  const session_date_id = sel?.value || null;
+  const fechaSeleccionada = (sel?.selectedOptions?.[0]?.textContent || "").trim();
+
+  const header = table.querySelector(".tr.th");
+  table.innerHTML = "";
+  table.appendChild(header);
+
+  if(!session_date_id || !fechaSeleccionada){
+    table.insertAdjacentHTML(
+      "beforeend",
+      `<div class="tr"><div class="small"><span class="warn">Selecciona una fecha.</span></div><div></div><div></div><div></div></div>`
+    );
+    return;
+  }
+    // ✅ BLOQUEO: si no hay tema guardado, no se puede hacer nada
+    const temaInfo = await getTemaForSelectedDate(session_id);
+  if(!temaInfo.ok){
+    // mostramos tabla vacía con aviso
+    table.insertAdjacentHTML("beforeend", `
+      <div class="tr">
+        <div class="small">
+          <span class="warn"><b>Debes guardar el tema del día</b></span>
+          <div class="small" style="opacity:.9;margin-top:6px;">
+            1) Selecciona módulo → 2) Selecciona tema(s) → 3) Clic en <b>Guardar tema</b>
+          </div>
+        </div>
+        <div></div><div></div><div></div>
+      </div>
+    `);
+
+    // 🔒 AHORA sí bloqueamos después de pintar el aviso
+    setTrainerLockedUI(session_id, true);
+    return;
+  }
+// ✅ cargar tema guardado del día desde session_dates
+const box = document.querySelector(`#sess_${CSS.escape(session_id)}`);
+const selMod = box?.querySelector(".modSelect");
+const selTopic = box?.querySelector(".topicSelect");
+
+const { data: sdRow, error: sdErr } = await sb
+  .from("session_dates")
+  .select("topic_id, tema_visto")
+  .eq("id", session_date_id)
+  .maybeSingle();
+
+if(!sdErr && sdRow?.topic_id){
+  // cargar temas del módulo correcto (necesitamos saber el módulo del topic)
+  const { data: tt, error: ttErr } = await sb
+    .from("training_topics")
+    .select("id, module_code")
+    .eq("id", sdRow.topic_id)
+    .maybeSingle();
+
+  if(!ttErr && tt?.module_code){
+    if(selMod) selMod.value = tt.module_code;
+    await trainerLoadTopicsForModule(session_id, tt.module_code);
+    if(selTopic) selTopic.value = sdRow.topic_id;
+  }
+}
+
+  try{
+    // 1) Citados
+    const { data: cit, error } = await sb
+      .from("citations")
+      .select(`employee_id, employees ( id, documento, nombre )`)
+      .eq("session_id", session_id)
+      .order("created_at", { ascending:true });
+
+    if(error) throw error;
+
+   if(!cit?.length){
+  table.insertAdjacentHTML("beforeend", `
+    <div class="tr">
+      <div class="small"><span class="warn">No hay citados en esta sesión.</span></div>
+      <div></div><div></div><div></div>
+    </div>
+  `);
+  setTrainerLockedUI(session_id, false, temaInfo.tema);
+  return;
+}
+    // ===============================
+// EMPLOYEE IDS
+// ===============================
+const empIds = (cit || []).map(c => c.employee_id).filter(Boolean);
+
+// ===============================
+// ENTREGADOS (session_exits)
+// ===============================
+const { data: exs, error: eX } = await sb
+  .from("session_exits")
+  .select("employee_id, exit_date")
+  .eq("session_id", session_id)
+  .in("employee_id", empIds);
+
+if(eX) throw eX;
+
+// Map: employee_id -> exit_date (string YYYY-MM-DD)
+const exitMap = new Map((exs || []).map(x => [x.employee_id, x.exit_date]));
+
+// ===============================
+// RETIRADOS (session_withdrawals)
+// ===============================
+const { data: wds, error: eW } = await sb
+  .from("session_withdrawals")
+  .select("employee_id, retiro_date")
+  .eq("session_id", session_id)
+  .in("employee_id", empIds);
+
+if(eW) throw eW;
+
+// Map: employee_id -> retiro_date (string YYYY-MM-DD)
+const wdMap = new Map((wds || []).map(x => [x.employee_id, x.retiro_date]));
+
+
+
+
+    const { data: at, error: e2 } = await sb
+      .from("attendance_dates")
+      .select("employee_id, asistio, tarde, tema")
+      .eq("session_id", session_id)
+      .eq("session_date", fechaSeleccionada)
+      .in("employee_id", empIds);
+
+    if(e2) throw e2;
+
+    const attMap = new Map((at || []).map(a => [a.employee_id, { asistio: a.asistio, tarde: a.tarde }]));
+
+    
+
+    // 3) Incapacidades para la fecha seleccionada
+    const { data: incRows, error: eInc } = await sb
+      .from("employee_incapacities")
+      .select("employee_id, desde, hasta")
+      .in("employee_id", empIds)
+      .lte("desde", fechaSeleccionada)
+      .gte("hasta", fechaSeleccionada);
+
+    if(eInc) throw eInc;
+
+    // Mapa: employee_id -> hasta (tomamos la más grande)
+    const incMap = new Map();
+    for(const r of (incRows || [])){
+      const prev = incMap.get(r.employee_id);
+      if(!prev || String(r.hasta) > String(prev)) incMap.set(r.employee_id, r.hasta);
+    }
+
+    // 4) Total días (para apto/no apto)
+    const { data: datesAll, error: e3 } = await sb
+      .from("session_dates")
+      .select("fecha")
+      .eq("session_id", session_id);
+
+    if(e3) throw e3;
+
+    const allFechas = (datesAll || []).map(d => d.fecha).filter(Boolean);
+    const totalDays = allFechas.length || 0;
+
+    let trueMap = new Map();
+    if(allFechas.length){
+      const { data: atAll, error: e4 } = await sb
+        .from("attendance_dates")
+        .select("employee_id, asistio, session_date")
+        .eq("session_id", session_id)
+        .in("session_date", allFechas)
+        .in("employee_id", empIds);
+
+      if(e4) throw e4;
+
+      for(const row of (atAll || [])){
+        if(row.asistio === true){
+          trueMap.set(row.employee_id, (trueMap.get(row.employee_id)||0) + 1);
+        }
+      }
+    }
+
+
+for(const c of cit){
+  const emp = c.employees;
+
+  // ✅ Si está entregado/retirado desde una fecha <= fecha seleccionada, no se muestra
+ const exitDate = exitMap.get(c.employee_id) || null;
+const yaEntregadoHoy = exitDate && String(fechaSeleccionada) >= String(exitDate);
+
+const wdDate = wdMap.get(c.employee_id) || null;
+const yaRetiradoHoy = wdDate && String(fechaSeleccionada) >= String(wdDate);
+
+
+
+
+  const name = emp?.nombre ? `${emp.nombre} (${emp.documento || ""})` : (c.employee_id || "");
+
+  // ✅ asistencia del día seleccionado
+  const rec = attMap.get(c.employee_id) || null;
+  const asistio = rec ? rec.asistio : null;
+  const late = rec ? (rec.tarde === true) : false;
+
+  // ✅ incapacidad (para ese día)
+  const incHasta = incMap.get(c.employee_id) || null;
+  const tieneIncap = !!incHasta;
+  const regresa = incHasta ? addDaysISO(incHasta, 1) : null;
+
+  // ✅ progreso apto/no apto (conteo de días asistidos)
+  const attended = trueMap.get(c.employee_id) || 0;
+  const apto = (totalDays > 0 && attended >= totalDays);
+  const prog = (totalDays > 0)
+    ? `${attended}/${totalDays} ${apto ? "· APTO" : "· NO APTO"}`
+    : `0/0`;
+
+  table.insertAdjacentHTML("beforeend", `
+  <div class="tr">
+
+    <!-- Columna EMPLEADO -->
+    <div>
+      <div class="small">
+        ${esc(name)}
+
+        <div class="small" style="margin-top:4px;opacity:.9;">
+          <span class="${apto ? "ok":"warn"}">${esc(prog)}</span>
+          ${late ? `<span class="warn"> · TARDE</span>` : ``}
+          ${tieneIncap ? `<span class="warn"> · INCAP.</span> <span class="small">${esc(incHasta)}</span>` : ``}
+          ${regresa ? `<span class="ok"> · REGRESA: ${esc(regresa)}</span>` : ``}
+        </div>
+
+        <!-- Acciones debajo -->
+        <div class="actions" style="margin-top:8px;">
+          ${
+            yaEntregadoHoy
+            ? `<button class="btnMini btnDanger"
+                 onclick="trainerUndoHandOver('${session_id}','${c.employee_id}')">
+                 Quitar entrega
+               </button>
+               <span class="small">Entregado desde ${esc(exitDate)}</span>`
+            : `<button class="btnMini btnGhost"
+                 onclick="trainerHandOver('${session_id}','${c.employee_id}','${esc(fechaSeleccionada)}')">
+                 Entregar a operación
+               </button>`
+          }
+
+          ${
+            yaRetiradoHoy
+            ? `<button class="btnMini btnDanger"
+                 onclick="trainerUndoWithdraw('${session_id}','${c.employee_id}')">
+                 Quitar retirado
+               </button>
+               <span class="small">Retirado desde ${esc(wdDate)}</span>`
+            : `<button class="btnMini btnGhost"
+                 onclick="trainerWithdraw('${session_id}','${c.employee_id}','${esc(fechaSeleccionada)}')">
+                 Retirado
+               </button>`
+          }
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Columna SÍ -->
+    <div>
+      <button class="btnMini btnOk" type="button"
+        onclick="trainerMark('${session_id}','${c.employee_id}','${esc(fechaSeleccionada)}',true,false)"
+        ${asistio === true && !late ? 'disabled' : ''}>Sí</button>
+    </div>
+
+    <!-- Columna NO -->
+    <div>
+      <button class="btnMini btnBad" type="button"
+        onclick="trainerMark('${session_id}','${c.employee_id}','${esc(fechaSeleccionada)}',false,false)"
+        ${asistio === false ? 'disabled' : ''}>No</button>
+    </div>
+
+    <!-- Columna TARDE -->
+    <div>
+      <button class="btnMini btnGhost" type="button"
+        onclick="trainerMark('${session_id}','${c.employee_id}','${esc(fechaSeleccionada)}',true,true)"
+        ${late ? 'disabled' : ''}>Tarde</button>
+    </div>
+
+  </div>
+`);
+
+}
+setTrainerLockedUI(session_id, false, temaInfo.tema);
+  }catch(err){
+    table.insertAdjacentHTML("beforeend", `
+      <div class="tr">
+        <div class="small"><span class="err">Error citados/asistencia:</span> ${esc(err.message || err)}</div><div></div><div></div><div></div>
+      </div>
+    `);
+    setLog({ trainer_load_citados_error: err, session_id });
+  }
+}
+
+
+window.trainerMark = async (session_id, employee_id, session_date, asistio, tarde=false) => {
+  const sb = getSB();
+  setStatus("Guardando asistencia...");
+
+  session_id = (session_id ?? "").toString().trim();
+  employee_id = (employee_id ?? "").toString().trim();
+  session_date = (session_date ?? "").toString().trim();
+
+  if(!session_id){
+    setStatus(`<span class="err">Error:</span> session_id vacío. Recarga la sesión y vuelve a intentar.`);
+    setLog({ error: "session_id vacío", session_id, employee_id, session_date, asistio, tarde });
+    return;
+  }
+  if(!employee_id){
+    setStatus(`<span class="err">Error:</span> employee_id vacío.`);
+    setLog({ error: "employee_id vacío", session_id, employee_id, session_date, asistio, tarde });
+    return;
+  }
+  if(!session_date){
+    setStatus(`<span class="err">Error:</span> Debes seleccionar una fecha.`);
+    setLog({ error: "session_date vacío", session_id, employee_id, session_date, asistio, tarde });
+    return;
+  }
+ 
+  const temaInfo = await getTemaForSelectedDate(session_id);
+  if(!temaInfo.ok){
+    setStatus(`<span class="warn">Primero guarda el tema del día para poder marcar asistencia.</span>`);
+    alert("Primero guarda el tema del día (módulo + tema) ✅");
+    return;
+  }
+  try{
+   const payload = {
+  session_id,
+  employee_id,
+  session_date,
+  asistio: !!asistio,
+  tarde: !!tarde
+};
+    
+
+setLog({ attendance_dates_upsert_payload: payload });
+
+
+    const { error } = await sb
+      .from("attendance_dates")
+      .upsert(payload, { onConflict: "session_id,employee_id,session_date" });
+
+    if(error) throw error;
+
+    setStatus(`<span class="ok">Asistencia guardada.</span>`);
+    await trainerLoadCitadosInto(session_id);
+
+  }catch(err){
+    setStatus(`<span class="err">Error guardando asistencia:</span> ${esc(err.message || err)}`);
+    setLog(err);
+  }
+};
+window.trainerHandOver = async (session_id, employee_id, exit_date) => {
+  const sb = getSB();
+  try{
+    const motivo = prompt("Motivo de entrega a operación (opcional):", "Entrega parcial") || null;
+
+    const payload = {
+      session_id,
+      employee_id,
+      exit_date,     // fecha desde la cual ya no debe aparecer
+      motivo
+    };
+
+    setStatus("Guardando entrega a operación...");
+
+    let r = await sb
+      .from("session_exits")
+      .upsert(payload, { onConflict: "session_id,employee_id" })
+      .select("id,session_id,employee_id,exit_date,motivo")
+      .single();
+
+    // fallback si no existe unique
+    if(r.error && String(r.error.message || "").toLowerCase().includes("on conflict")){
+      r = await sb
+        .from("session_exits")
+        .insert(payload)
+        .select("id,session_id,employee_id,exit_date,motivo")
+        .single();
+    }
+    if(r.error) throw r.error;
+
+    setStatus(`<span class="ok">Entregado a operación.</span> Desde: <code>${esc(exit_date)}</code>`);
+    setLog({ session_exit_saved: r.data });
+
+    await trainerLoadCitadosInto(session_id); // refrescar tabla
+  }catch(e){
+    setStatus(`<span class="err">Error entregando:</span> ${esc(e.message || e)}`);
+    setLog(e);
+  }
+};
+
+window.trainerUndoHandOver = async (session_id, employee_id) => {
+  const sb = getSB();
+  if(!confirm("¿Quitar entrega a operación y volver a mostrar a esta persona?")) return;
+
+  try{
+    setStatus("Quitando entrega a operación...");
+    const { error } = await sb
+      .from("session_exits")
+      .delete()
+      .eq("session_id", session_id)
+      .eq("employee_id", employee_id);
+
+    if(error) throw error;
+
+    setStatus(`<span class="ok">Entrega revertida.</span>`);
+    setLog({ session_exit_deleted: { session_id, employee_id } });
+
+    await trainerLoadCitadosInto(session_id);
+  }catch(e){
+    setStatus(`<span class="err">Error revirtiendo:</span> ${esc(e.message || e)}`);
+    setLog(e);
+  }
+};
+ window.trainerWithdraw = async (session_id, employee_id, retiro_date) => {
+  const sb = getSB();
+  try{
+    const motivo = prompt("Motivo de retiro (opcional):", "Retirado") || null;
+
+    const payload = {
+      session_id,
+      employee_id,
+      retiro_date,   // ✅ mismo nombre que la columna
+      motivo
+    };
+
+    setStatus("Guardando RETIRO...");
+
+    let r = await sb
+      .from("session_withdrawals")
+      .upsert(payload, { onConflict: "session_id,employee_id" })
+      .select("id,session_id,employee_id,retiro_date,motivo")
+      .single();
+
+    if(r.error && String(r.error.message || "").toLowerCase().includes("on conflict")){
+      r = await sb
+        .from("session_withdrawals")
+        .insert(payload)
+        .select("id,session_id,employee_id,retiro_date,motivo")
+        .single();
+    }
+    if(r.error) throw r.error;
+
+    setStatus(`<span class="ok">RETIRADO.</span> Desde: <code>${esc(retiro_date)}</code>`);
+    setLog({ withdrawal_saved: r.data });
+
+    await trainerLoadCitadosInto(session_id);
+  }catch(e){
+    setStatus(`<span class="err">Error retirando:</span> ${esc(e.message || e)}`);
+    setLog(e);
+  }
+};
+
+window.trainerUndoWithdraw = async (session_id, employee_id) => {
+  const sb = getSB();
+  if(!confirm("¿Quitar RETIRADO y volver a mostrar a esta persona?")) return;
+
+  try{
+    setStatus("Quitando RETIRO...");
+    const { error } = await sb
+      .from("session_withdrawals")
+      .delete()
+      .eq("session_id", session_id)
+      .eq("employee_id", employee_id);
+
+    if(error) throw error;
+
+    setStatus(`<span class="ok">Retiro revertido.</span>`);
+    setLog({ withdrawal_deleted: { session_id, employee_id } });
+
+    await trainerLoadCitadosInto(session_id);
+  }catch(e){
+    setStatus(`<span class="err">Error revirtiendo retiro:</span> ${esc(e.message || e)}`);
+    setLog(e);
+  }
+};
+
+/* =========================================================
+   INIT
+========================================================= */
+document.addEventListener("DOMContentLoaded", async () => {
+  try{
+    $("btnLogin").addEventListener("click", doLogin);
+    $("btnForgot").addEventListener("click", doForgot);
+    $("btnReset").addEventListener("click", doResetPassword);
+    $("btnResetBack").addEventListener("click", goToLogin);
+
+    $("email").addEventListener("keydown", (e)=>{ if(e.key==="Enter") doLogin(); });
+    $("password").addEventListener("keydown", (e)=>{ if(e.key==="Enter") doLogin(); });
+
+    if(!window.supabase){
+      $("loginMsg").innerHTML = `<span class="err">No cargó Supabase JS (posible bloqueo del navegador).</span>`;
+      return;
+    }
+
+    if(isRecoveryFlow()){
+      showOnly("reset");
+      $("resetMsg").innerHTML = `<span class="small">Cargando recuperación...</span>`;
+      const sb = getSB();
+      await sb.auth.getSession();
+      $("resetMsg").innerHTML = `<span class="small">Ingresa tu nueva contraseña.</span>`;
+      return;
+    }
+
+    await bootApp();
+  }catch(e){
+    $("loginMsg").innerHTML = `<span class="err">${esc(e.message || e)}</span>`;
+    setLog(e);
+  }
+});
+  window.adminSetSessionStatus = async (session_id, estado) => {
+  const sb = getSB();
+  session_id = (session_id ?? "").toString().trim();
+  estado = (estado ?? "").toString().trim();
+
+  if(!session_id) return alert("session_id vacío");
+  if(!estado) return alert("estado vacío");
+
+  const action = (estado === "cerrada") ? "Cerrar" : "Reabrir";
+  if(!confirm(`¿${action} esta sesión?\n\nsession_id: ${session_id}\nNuevo estado: ${estado}`)) return;
+
+  try{
+    setStatus(`Actualizando estado a <code>${esc(estado)}</code>...`);
+    const { error } = await sb
+      .from("sessions")
+      .update({ estado })
+      .eq("id", session_id);
+
+    if(error) throw error;
+
+    setStatus(`<span class="ok">Listo.</span> Sesión actualizada a <code>${esc(estado)}</code>.`);
+    setLog({ session_status_updated: { session_id, estado } });
+
+    // refresca panel admin + selector citaciones
+    // refrescar panel + selector de sesiones (para que todo muestre lo nuevo)
+await adminLoadSessions();
+await adminLoadSessionSelects();
+
+  }catch(e){
+    setStatus(`<span class="err">Error:</span> ${esc(e.message || e)}`);
+    setLog(e);
+    alert("No se pudo actualizar el estado. Revisa consola/log.");
+  }
+};
+window.trainerExportSessionCSV = async (session_id) => {
+  const sb = getSB();
+  session_id = (session_id ?? "").toString().trim();
+  if(!session_id) return alert("session_id vacío");
+  
+  const { data: missing, error: eM } = await sb
+    .from("session_dates")
+    .select("fecha, tema_visto")
+    .eq("session_id", session_id);
+
+  if(eM) throw eM;
+
+  const faltan = (missing || []).filter(r => !String(r.tema_visto || "").trim()).map(r => r.fecha);
+  if(faltan.length){
+    alert("No puedes exportar: faltan temas en estas fechas:\n\n- " + faltan.join("\n- "));
+    return;
+  }
+  try{
+    setStatus("Preparando exportación...");
+
+    // 1) Datos básicos de la sesión + entrenamiento
+    const { data: sess, error: e0 } = await sb
+      .from("sessions")
+      .select("id,fecha,ciudad, trainings ( nombre )")
+      .eq("id", session_id)
+      .maybeSingle();
+    if(e0) throw e0;
+
+    const entrenamiento = sess?.trainings?.nombre || "Entrenamiento";
+    const ciudad = sess?.ciudad || "";
+    const fecha_inicio = sess?.fecha || "";
+
+    // 2) Fechas reales de la sesión
+    const { data: dates, error: e1 } = await sb
+      .from("session_dates")
+      .select("fecha")
+      .eq("session_id", session_id)
+      .order("fecha", { ascending:true });
+    if(e1) throw e1;
+
+    const allFechas = (dates || []).map(d => d.fecha).filter(Boolean);
+    if(!allFechas.length){
+      alert("Esta sesión no tiene fechas configuradas (session_dates).");
+      return;
+    }
+
+    // 3) Citados + employees
+    const { data: cit, error: e2 } = await sb
+      .from("citations")
+      .select(`employee_id, employees ( documento, nombre )`)
+      .eq("session_id", session_id);
+    if(e2) throw e2;
+
+    if(!cit?.length){
+      alert("Esta sesión no tiene citados.");
+      return;
+    }
+
+    const empIds = cit.map(c => c.employee_id).filter(Boolean);
+ 
+const { data: wds, error: eW } = await sb
+  .from("session_withdrawals")
+  .select("employee_id, retiro_date")
+  .eq("session_id", session_id)
+  .in("employee_id", empIds);
+
+if(eW) throw eW;
+
+const wdMap = new Map((wds || []).map(x => [x.employee_id, x.retiro_date]));
+
+
+const { data: exs, error: eX } = await sb
+  .from("session_exits")
+  .select("employee_id, exit_date")
+  .eq("session_id", session_id)
+  .in("employee_id", empIds);
+
+if(eX) throw eX;
+
+const exitMap = new Map((exs || []).map(x => [x.employee_id, x.exit_date]));
+
+
+   // 4) Asistencias de todas las fechas (SOLO asistio)
+const { data: atAll, error: e3 } = await sb
+  .from("attendance_dates")
+  .select("employee_id, session_date, asistio")
+  .eq("session_id", session_id)
+  .in("session_date", allFechas)
+  .in("employee_id", empIds);
+if(e3) throw e3;
+
+// index: employee_id|fecha -> asistio
+const mapAtt = new Map();
+for(const r of (atAll || [])){
+  const k = `${r.employee_id}|${r.session_date}`;
+  mapAtt.set(k, { asistio: r.asistio });
+}
+
+// 4B) Temas del día desde session_dates (tema_visto por fecha)
+const { data: sdTopics, error: eT } = await sb
+  .from("session_dates")
+  .select("fecha, tema_visto")
+  .eq("session_id", session_id)
+  .in("fecha", allFechas);
+
+if(eT) throw eT;
+
+// Map: fecha (YYYY-MM-DD) -> tema_visto
+const temaPorFecha = new Map(
+  (sdTopics || []).map(r => [String(r.fecha).slice(0,10), (r.tema_visto || "")])
+);
+
+    // CSV
+    const headers = [
+      "sesion_id","entrenamiento","ciudad","fecha_inicio_sesion",
+      "session_date","documento","nombre","asistio","tema"
+    ];
+
+    const lines = [];
+    lines.push(headers.join(","));
+
+    // para cada fecha y cada citado, sacamos una fila
+    for(const f of allFechas){
+      for(const c of cit){
+        const emp = c.employees || {};
+       const exitDate = exitMap.get(c.employee_id) || null;
+if(exitDate && String(f) >= String(exitDate)){
+  continue;
+}
+
+const wdDate = wdMap.get(c.employee_id) || null;
+if(wdDate && String(f) >= String(wdDate)){
+  continue;
+}
+
+        const doc = (emp.documento ?? "").toString().replaceAll('"','""');
+        const nom = (emp.nombre ?? "").toString().replaceAll('"','""');
+
+        const k = `${c.employee_id}|${f}`;
+        const att = mapAtt.get(k);
+
+        // asistio: true/false/vacío
+        const asistio = (att?.asistio === true) ? "SI" : (att?.asistio === false ? "NO" : "");
+
+        // tema: si está en ese registro; si no, vacío
+        const tema = (temaPorFecha.get(String(f).slice(0,10)) || "").toString().replaceAll('"','""');
+
+
+        const row = [
+          session_id,
+          `"${entrenamiento.replaceAll('"','""')}"`,
+          `"${ciudad.replaceAll('"','""')}"`,
+          fecha_inicio,
+          f,
+          `"${doc}"`,
+          `"${nom}"`,
+          asistio,
+          `"${tema}"`
+        ];
+        lines.push(row.join(","));
+      }
+    }
+
+    const csv = lines.join("\n");
+    const safeName = `${entrenamiento}`.trim().slice(0,50).replace(/[\\/:*?"<>|]/g,"-");
+    const filename = `asistencia_${safeName}_${session_id.slice(0,8)}.csv`;
+
+    downloadTextFile(csv, filename, "text/csv;charset=utf-8");
+    setStatus(`<span class="ok">Exportación lista.</span> Archivo: <code>${esc(filename)}</code>`);
+    setLog({ export_csv: { session_id, fechas: allFechas.length, citados: cit.length } });
+
+  }catch(e){
+    setStatus(`<span class="err">Error exportando:</span> ${esc(e.message || e)}`);
+    setLog(e);
+    alert("No se pudo exportar. Revisa el panel de log.");
+  }
+};
+</script>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
