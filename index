@@ -716,8 +716,36 @@ function renderAdminLeft(){
         Pegas el <code>training_id</code>. Luego el sistema genera <b>fechas reales</b> según duración.
       </div>
 
-      <label>training_id (uuid)</label>
-      <input id="sessionTrainingId" placeholder="Pega aquí el training_id" />
+     <label>Training</label>
+<select id="trainingSelect"></select>
+
+<label>Versión (solo Excelencia)</label>
+<select id="versionSelect">
+  <option value="">No aplica</option>
+  <option>ciclo 1 2026</option>
+  <option>ciclo 2 2026</option>
+  <option>ciclo 3 2026</option>
+</select>
+
+<label>Línea</label>
+<select id="lineaSelect">
+  <option>Masivo</option>
+  <option>O&M</option>
+  <option>Empresas</option>
+</select>
+
+<label>Tecnología (solo O&M)</label>
+<select id="tecnologiaSelect">
+  <option value="">No aplica</option>
+  <option>HFC</option>
+  <option>Fibra</option>
+</select>
+
+<label>Cargo</label>
+<select id="cargoSelect">
+  <option>DICO</option>
+  <option>Cliente</option>
+</select>
 
       <div class="row">
         <div class="col">
@@ -951,6 +979,7 @@ async function bootApp(){
 }
 async function adminInit(){
   await adminRefreshAll();
+await adminLoadTrainings();
 }
 
 async function adminRefreshAll(){
@@ -1209,7 +1238,28 @@ async function adminLoadSessions(){
   }
 }
 
+async function adminLoadTrainings(){
+  const sb = getSB();
+  const sel = document.getElementById("trainingSelect");
 
+  if(!sel) return;
+
+  sel.innerHTML = `<option value="">Cargando...</option>`;
+
+  const { data, error } = await sb
+    .from("trainings")
+    .select("id,nombre")
+    .order("nombre");
+
+  if(error){
+    sel.innerHTML = `<option value="">(error)</option>`;
+    return;
+  }
+
+  sel.innerHTML =
+    `<option value="">Selecciona training...</option>` +
+    data.map(t => `<option value="${t.id}">${t.nombre}</option>`).join("");
+}
 async function adminLoadSessionSelects(){
   const sb = getSB();
   const sel = $("citeSession");
