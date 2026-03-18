@@ -734,14 +734,14 @@ function renderAdminLeft(){
   <option>Empresas</option>
 </select>
 
-<label>Tecnología (solo O&M)</label>
-<select id="tecnologiaSelect">
-  <option value="">No aplica</option>
-  <option>HFC</option>
-  <option>Fibra</option>
-</select>
-
-<!--
+<div id="tecnologiaBox">
+  <label>Tecnología (solo O&M)</label>
+  <select id="tecnologiaSelect">
+    <option value="">No aplica</option>
+    <option>HFC</option>
+    <option>Fibra</option>
+  </select>
+</div>
 <label>Cargo</label>
 <select id="cargoSelect">
   <option>DICO</option>
@@ -1137,7 +1137,7 @@ async function adminLoadSessions(){
     // 1) traer sesiones (últimas 50)
     const { data, error } = await sb
       .from("sessions")
-      .select(`id, fecha, ciudad, estado, training_id, formador_user_id, trainings ( nombre )`)
+      .select(`id, fecha, ciudad, estado, linea, tecnologia, version, training_id, formador_user_id, trainings ( nombre )`)
       .order("fecha", { ascending:false })
       .limit(50);
 
@@ -1165,8 +1165,14 @@ async function adminLoadSessions(){
           </div>
 
           <div class="small" style="margin-top:6px;">
-            Sesión · ${esc(s.fecha)} · ${esc(s.ciudad || "")}
-          </div>
+  Sesión · ${esc(s.fecha)} · ${esc(s.ciudad || "")}
+</div>
+
+<div class="small" style="margin-top:4px;opacity:.9;">
+  ${esc(s.linea || "")}
+  ${s.tecnologia ? " · " + esc(s.tecnologia) : ""}
+  ${s.version ? " · " + esc(s.version) : ""}
+</div>
 
           <div class="kv">
             <div>session_id</div><div><code>${esc(s.id)}</code></div>
@@ -1268,7 +1274,7 @@ async function adminLoadSessionSelects(){
 
    const { data, error } = await sb
   .from("sessions")
-  .select(`id,fecha,ciudad,estado, trainings ( nombre )`)
+  .select(`id,fecha,ciudad,estado,linea,tecnologia,version, trainings ( nombre )`)
   .not("estado","eq","cerrada")
   .order("fecha", { ascending:false })
   .limit(150);
@@ -1288,7 +1294,7 @@ async function adminLoadSessionSelects(){
 
   sel.innerHTML = `<option value="">Selecciona sesión...</option>` + data.map(s => {
     const trName = s.trainings?.nombre || "Entrenamiento";
-    const tag = `${trName} · ${s.fecha} · ${s.ciudad || ""} · ${s.id}`;
+    const tag = `${trName} · ${s.fecha} · ${s.ciudad || ""} · ${s.linea || ""}${s.tecnologia ? " " + s.tecnologia : ""} · ${s.id}`;
     return `<option value="${s.id}">${esc(tag)}</option>`;
   }).join("");
 }
@@ -1339,17 +1345,42 @@ async function adminCreateTraining(){
     $("btnCreateTraining").textContent = "Guardar entrenamiento";
   }
 }
+function resolverTecnologia(linea, tecnologiaSeleccionada){
+  if(linea === "Masivo"){
+    return null;
+  }
 
-/* Crear sesión + preparar fechas reales */
+  if(linea === "Empresas"){
+    return "Fibra";
+  }
+
+  if(linea === "O&M"){
+    return tecnologiaSeleccionada || null;
+  }
+
+  return null;
+}
+
 async function adminCreateSession(){
   const sb = getSB();
 
-  const training_id = val($("sessionTrainingId").value);
+  const training_id = val($("trainingSelect").value);
   const fecha = val($("sessionFecha").value);
   const ciudad = val($("sessionCiudad").value);
   const formador_user_id = $("sessionFormador").value;
   const estado = val($("sessionEstado").value) || null;
   const msg = $("sessionMsg");
+ const linea = val($("lineaSelect").value);
+const tecnologiaSeleccionada = val($("tecnologiaSelect").value);
+
+const tecnologia = resolverTecnologia(linea, tecnologiaSeleccionada);
+
+// validación solo para O&M
+if(linea === "O&M" && !tecnologia){
+  msg.innerHTML = `<span class="err">Debes seleccionar tecnología para O&M.</span>`;
+  return;
+}
+const version = val($("versionSelect").value) || null;
   msg.innerHTML = "";
 
   if(!training_id){ msg.innerHTML = `<span class="err">Pega el training_id.</span>`; return; }
@@ -1360,7 +1391,16 @@ async function adminCreateSession(){
   $("btnCreateSession").textContent = "Creando...";
 
   try{
-    const payload = { training_id, fecha, ciudad, formador_user_id, estado };
+   const payload = {
+  training_id,
+  fecha,
+  ciudad,
+  formador_user_id,
+  estado,
+  linea,
+  tecnologia,
+  version
+};
     const { data, error } = await sb
       .from("sessions")
       .insert(payload)
@@ -3200,6 +3240,39 @@ document.addEventListener("DOMContentLoaded", async () => {
     $("loginMsg").innerHTML = `<span class="err">${esc(e.message || e)}</span>`;
     setLog(e);
   }
+  const lineaSel = $("lineaSelect");
+const tecSel = $("tecnologiaSelect");
+
+if(lineaSel && tecSel){
+
+ function controlarTecnologia(){
+  const linea = lineaSel.value;
+  const box = document.getElementById("tecnologiaBox");
+
+  // 🔵 O&M → visible
+  if(linea === "O&M"){
+    box.style.display = "block";
+    tecSel.disabled = false;
+    tecSel.value = "";
+  }
+
+  // 🟣 Masivo → oculto
+  else if(linea === "Masivo"){
+    box.style.display = "none";
+    tecSel.value = "";
+  }
+
+  // 🟢 Empresas → oculto pero forzado
+  else if(linea === "Empresas"){
+    box.style.display = "none";
+    tecSel.value = "Fibra";
+  }
+}
+  lineaSel.addEventListener("change", controlarTecnologia);
+
+  // ejecutar al cargar
+  controlarTecnologia();
+}
 });
   window.adminSetSessionStatus = async (session_id, estado) => {
   const sb = getSB();
@@ -3416,20 +3489,3 @@ if(wdDate && String(f) >= String(wdDate)){
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
