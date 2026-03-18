@@ -741,12 +741,13 @@ function renderAdminLeft(){
   <option>Fibra</option>
 </select>
 
+<!--
 <label>Cargo</label>
 <select id="cargoSelect">
   <option>DICO</option>
   <option>Cliente</option>
 </select>
-
+-->
       <div class="row">
         <div class="col">
           <label>Fecha inicio</label>
@@ -2285,8 +2286,7 @@ async function trainerLoadTopicsForModule(session_id, module_code){
   const selDate  = box.querySelector(".dateSelect");
   if(!selTopic || !selDate) return;
 
- selTopic.innerHTML = "";
-
+  selTopic.innerHTML = "";
   selTopic.disabled = true;
 
   if(!module_code) return;
@@ -2297,17 +2297,46 @@ async function trainerLoadTopicsForModule(session_id, module_code){
     return;
   }
 
-   // ✅ TEMARIO LIBRE: NO depende del day_number
-  const { data, error } = await sb
+  // 🔥 1. TRAER DATOS DE LA SESIÓN
+  const { data: session, error: e1 } = await sb
+    .from("sessions")
+    .select("linea, tecnologia, trainings(nombre)")
+    .eq("id", session_id)
+    .single();
+
+  if(e1){
+    console.error(e1);
+    return;
+  }
+
+  const training = session.trainings?.nombre;
+  const linea = session.linea;
+  const tecnologias = session.tecnologia ? [session.tecnologia] : [];
+
+  // 🔥 2. QUERY BIEN ARMADA
+  let query = sb
     .from("training_topics")
     .select("id, topic_label")
     .eq("is_active", true)
     .eq("module_code", module_code)
-    .order("topic_label", { ascending: true });
+    .eq("training", training)
+    .eq("linea", linea);
 
-  if(error){ console.error(error); return; }
+  if (tecnologias.length > 0) {
+    query = query.in("tecnologia", tecnologias);
+  } else {
+    query = query.is("tecnologia", null);
+  }
 
-  for(const t of (data||[])){
+  const { data, error } = await query.order("topic_label");
+
+  if(error){
+    console.error(error);
+    return;
+  }
+
+  // 🔥 3. PINTAR TEMAS
+  for(const t of (data || [])){
     const opt = document.createElement("option");
     opt.value = t.id;
     opt.textContent = t.topic_label;
@@ -2316,7 +2345,6 @@ async function trainerLoadTopicsForModule(session_id, module_code){
 
   selTopic.disabled = false;
 }
-
 
 function wireTrainerHandlers(){
   $("btnRefreshTrainer").onclick = trainerInit;
