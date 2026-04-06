@@ -633,6 +633,10 @@ function setPanels(role){
     $("leftPanel").innerHTML = renderAdminLeft();
     $("rightPanel").innerHTML = renderAdminRight();
     wireAdminHandlers();
+
+    // 🔥 AQUÍ ES DONDE DEBE IR
+    adminLoadTrainings();
+
   }else{
     $("leftPanel").innerHTML = renderTrainerLeft();
     $("rightPanel").innerHTML = renderTrainerRight();
@@ -974,13 +978,7 @@ async function bootApp(){
 }
 async function adminInit(){
   await adminRefreshAll();
-
-  // 🔥 esperar a que el DOM esté listo
-  setTimeout(async () => {
-    await adminLoadTrainings();
-  }, 200);
 }
-
 async function adminRefreshAll(){
   await adminLoadFormadores();
   await adminLoadSessions();
