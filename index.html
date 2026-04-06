@@ -973,8 +973,8 @@ async function bootApp(){
   }
 }
 async function adminInit(){
-  await adminRefreshAll();
-await adminLoadTrainings();
+  await adminLoadTrainings(); 
+  await adminRefreshAll();     
 }
 
 async function adminRefreshAll(){
@@ -1245,20 +1245,27 @@ async function adminLoadTrainings(){
 
   if(!sel) return;
 
+  // 🔥 limpiar SIEMPRE
   sel.innerHTML = `<option value="">Cargando...</option>`;
 
   const { data, error } = await sb
     .from("trainings")
     .select("id,nombre")
-    .order("nombre");
+    .order("nombre", { ascending: true });
 
   if(error){
     sel.innerHTML = `<option value="">(error)</option>`;
+    console.error(error);
     return;
   }
 
-  sel.innerHTML =
-    `<option value="">Selecciona training...</option>` +
+  if(!data || data.length === 0){
+    sel.innerHTML = `<option value="">(No hay trainings)</option>`;
+    return;
+  }
+
+  // 🔥 reconstrucción limpia
+  sel.innerHTML = `<option value="">Selecciona training...</option>` +
     data.map(t => `<option value="${t.id}">${t.nombre}</option>`).join("");
 }
 async function adminLoadSessionSelects(){
