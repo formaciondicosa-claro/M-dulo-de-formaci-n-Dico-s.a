@@ -331,6 +331,27 @@ function addDaysISO(isoDate, days){
   const dd = String(d.getDate()).padStart(2,"0");
   return `${yyyy}-${mm}-${dd}`;
 }
+  function addWorkingDaysISO(startDate, totalDays){
+  const fechas = [];
+  let current = new Date(startDate + "T00:00:00");
+
+  while(fechas.length < totalDays){
+    const day = current.getDay(); // 0 domingo
+
+    // SOLO EXCLUIR DOMINGO
+    if(day !== 0){
+      const yyyy = current.getFullYear();
+      const mm = String(current.getMonth()+1).padStart(2,"0");
+      const dd = String(current.getDate()).padStart(2,"0");
+
+      fechas.push(`${yyyy}-${mm}-${dd}`);
+    }
+
+    current.setDate(current.getDate() + 1);
+  }
+
+  return fechas;
+}
   function parseDateToISO(v){
   // Devuelve "YYYY-MM-DD" o null
   if(v === null || v === undefined) return null;
@@ -752,16 +773,18 @@ function renderAdminLeft(){
     <option>Fibra</option>
   </select>
 </div>
-      <div class="row">
-        <div class="col">
-          <label>Fecha inicio</label>
-          <input id="sessionFecha" type="date" />
-        </div>
-        <div class="col">
-          <label>Ciudad</label>
-          <input id="sessionCiudad" placeholder="Ej: Bogotá" />
-        </div>
-      </div>
+     <div class="row">
+  <div class="col">
+    <label>Fecha inicio</label>
+    <input id="sessionFecha" type="date" />
+
+    <label>Duración (días)</label>
+    <input id="sessionDuracion" type="number" min="1" placeholder="Ej: 12" />
+
+    <label>Ciudad</label>
+    <input id="sessionCiudad" placeholder="Ej: Bogotá" />
+  </div>
+</div>
 
       <label>Formador</label>
       <select id="sessionFormador"></select>
@@ -1444,20 +1467,15 @@ async function adminPrepareSessionDatesUI(session_id, training_id, startDate){
   $("datesBox").classList.remove("hidden");
   $("datesBox").dataset.sessionId = session_id;
 
-  let dur = 1;
-  try{
-    const { data: tr, error } = await sb.from("trainings").select("vigencia_dias").eq("id", training_id).maybeSingle();
-    if(error) throw error;
-    dur = Math.max(1, Number(tr?.vigencia_dias || 1));
-  }catch(e){
-    dur = 1;
-  }
+  let dur = parseInt(document.getElementById("sessionDuracion").value || "1", 10);
+dur = Math.max(1, dur);
 
   const list = $("datesList");
   list.innerHTML = "";
 
-  for(let i=0;i<dur;i++){
-    const iso = addDaysISO(startDate, i);
+  const fechas = addWorkingDaysISO(startDate, dur);
+
+fechas.forEach((iso, i) => {
     list.insertAdjacentHTML("beforeend", `
       <div class="item">
         <div class="row" style="justify-content:space-between;align-items:center;">
@@ -1471,7 +1489,7 @@ async function adminPrepareSessionDatesUI(session_id, training_id, startDate){
   }
 
   $("datesMsg").innerHTML = `<span class="small">Sesión: <code>${esc(session_id)}</code>. Revisa/ajusta las fechas y guarda.</span>`;
-}
+});
 
 async function adminSaveSessionDates(){
   const sb = getSB();
