@@ -973,8 +973,12 @@ async function bootApp(){
   }
 }
 async function adminInit(){
-  await adminLoadTrainings(); 
-  await adminRefreshAll();     
+  await adminRefreshAll();
+
+  // 🔥 esperar a que el DOM esté listo
+  setTimeout(async () => {
+    await adminLoadTrainings();
+  }, 200);
 }
 
 async function adminRefreshAll(){
@@ -1336,6 +1340,7 @@ async function adminCreateTraining(){
     $("trCertifica").value = "true";
 
     await adminRefreshAll();
+    await adminLoadTrainings();
 
   }catch(e){
     msg.innerHTML = `<span class="err">Error:</span> ${esc(e.message || e)}`;
