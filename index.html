@@ -1489,8 +1489,7 @@ fechas.forEach((iso, i) => {
   }
 
   $("datesMsg").innerHTML = `<span class="small">Sesión: <code>${esc(session_id)}</code>. Revisa/ajusta las fechas y guarda.</span>`;
-});
-
+}
 async function adminSaveSessionDates(){
   const sb = getSB();
   const box = $("datesBox");
