@@ -1486,7 +1486,7 @@ fechas.forEach((iso, i) => {
         <input type="date" class="dateInput" data-idx="${i}" value="${iso}" />
       </div>
     `);
-  }
+  });
 
   $("datesMsg").innerHTML = `<span class="small">Sesión: <code>${esc(session_id)}</code>. Revisa/ajusta las fechas y guarda.</span>`;
 }
