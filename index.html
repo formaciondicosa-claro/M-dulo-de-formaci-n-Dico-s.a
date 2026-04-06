@@ -692,7 +692,13 @@ function renderAdminLeft(){
       <div class="small">Solo crea el tipo de capacitación y su duración.</div>
 
       <label>Nombre del entrenamiento</label>
-      <input id="trNombre" placeholder="Ej: Trabajo en alturas" />
+      <select id="trNombre">
+  <option value="">Selecciona entrenamiento...</option>
+  <option>Ascenso Técnico</option>
+  <option>Excelencia Operativa</option>
+  <option>Formación Inicial</option>
+  <option>Recertificación Operativa</option>
+</select>
 
       <div class="row">
         <div class="col">
@@ -1083,7 +1089,9 @@ function wireAdminHandlers(){
   };
 
   $("btnEmpUpload").onclick = adminUploadEmployees;
-  $("btnCreateTraining").onclick = adminCreateTraining;
+  $("btnCreateTraining").onclick = () => {
+  alert("Los entrenamientos son un catálogo fijo.");
+};
   $("btnCreateSession").onclick = adminCreateSession;
   $("btnSaveDates").onclick = adminSaveSessionDates;
   $("btnRefreshAdmin").onclick = adminRefreshAll;
