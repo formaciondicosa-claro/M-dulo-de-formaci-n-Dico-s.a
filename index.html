@@ -2447,7 +2447,11 @@ async function trainerInit(){
         activo: true
       });
 
-    if(error) throw error;
+    if(error){
+  console.error(error);
+  alert("ERROR REAL: " + error.message);
+  return;
+}
 
     alert("Token generado: " + token);
 
