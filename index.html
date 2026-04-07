@@ -2423,6 +2423,39 @@ async function trainerInit(){
   await trainerLoadAbsenceAlerts();   // ✅ alertas primero
   await trainerLoadSessions();        // ✅ luego sesiones
 }
+  async function generarTokenEvaluacion(session_id){
+
+  const sb = getSB();
+
+  try{
+
+    const evaluation_id = prompt("Ingresa el ID de la evaluación:");
+
+    if(!evaluation_id){
+      alert("Debes ingresar una evaluación");
+      return;
+    }
+
+    const token = Math.random().toString(36).substring(2,8).toUpperCase();
+
+    const { error } = await sb
+      .from("evaluation_tokens")
+      .insert({
+        session_id: session_id,
+        evaluation_id: evaluation_id,
+        token: token,
+        activo: true
+      });
+
+    if(error) throw error;
+
+    alert("Token generado: " + token);
+
+  }catch(e){
+    console.error(e);
+    alert("Error generando token");
+  }
+}
  async function trainerLoadAbsenceAlerts(){
   const sb = getSB();
   const cont = $("absenceAlertsTrainer");
@@ -2608,7 +2641,17 @@ async function trainerLoadSessions(){
               Exportar asistencia (CSV)
             </button>
           </div>
+<div class="actions" style="margin-top:10px;">
+  <button class="btnMini btnGhost" type="button"
+    onclick="trainerExportSessionCSV('${s.id}')">
+    Exportar asistencia (CSV)
+  </button>
 
+  <button class="btnMini btnGhost" type="button"
+    onclick="generarTokenEvaluacion('${s.id}')">
+    Generar evaluación
+  </button>
+</div>
           <div class="tablelike" style="margin-top:10px;">
             <div class="tr th">
               <div>Empleado</div><div>Asistió</div><div>No</div><div>Tarde</div>
