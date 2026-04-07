@@ -2441,11 +2441,9 @@ async function trainerInit(){
     const { error } = await sb
       .from("evaluation_tokens")
       .insert({
-        session_id: session_id,
-        evaluation_id: evaluation_id,
-        token: token,
-        activo: true
-      });
+  session_id: session_id,
+  token: token
+});
 
     if(error){
   console.error(error);
