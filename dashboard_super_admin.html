@@ -786,8 +786,8 @@ function renderSessionsList(){
     `;
   }
 }
-async function cargarInasistencias(session_id){
-  const sb = getSB();
+async function cargarInasistenciasDesdeJS(){
+
   const cont = $("inasistenciasTable");
 
   cont.innerHTML = `
@@ -798,42 +798,61 @@ async function cargarInasistencias(session_id){
     </div>
   `;
 
-  const { data, error } = await sb
-    .from("v_inasistencias")
-    .select("nombre, documento, fecha")
-    .eq("session_id", session_id)
-    .order("fecha", { ascending:true });
+  // 🔥 traer entregados y retirados (igual que el resumen)
+  const { exitMap, retiroMap } = await loadExitAndRetiroMaps(STATE.selectedSessionId);
 
-  if(error){
-    cont.innerHTML += `
-      <div class="tr">
-        <div class="err">${error.message}</div>
-        <div></div>
-        <div></div>
-      </div>
-    `;
-    return;
+  for(const d of STATE.sessionDates){
+    const fecha = d.fecha;
+
+    const map = STATE.attendanceByDate.get(fecha) || new Map();
+
+    // 🔥 mismos citados activos del resumen
+    const activeCited = STATE.citations.filter(c => {
+      const empId = c.employee_id;
+
+      const retiro = retiroMap.get(empId);
+      const exit   = exitMap.get(empId);
+
+      // ❌ si ya salió antes de la fecha, no cuenta
+      if(retiro && String(retiro) < String(fecha)) return false;
+      if(exit && String(exit) < String(fecha)) return false;
+
+      return true;
+    });
+// 🔥 cargar incapacidades
+const empIds = activeCited.map(c => c.employee_id);
+
+let incMap = new Map();
+
+if(empIds.length){
+  const { data: incRows } = await getSB()
+    .from("employee_incapacities")
+    .select("employee_id, desde, hasta")
+    .in("employee_id", empIds)
+    .lte("desde", fecha)
+    .gte("hasta", fecha);
+
+  for(const r of (incRows || [])){
+    incMap.set(r.employee_id, true);
   }
+}
+    for(const c of activeCited){
+      const emp = c.employees || {};
+      const rec = map.get(c.employee_id);
 
-  if(!data.length){
-    cont.innerHTML += `
-      <div class="tr">
-        <div class="ok">Sin inasistencias</div>
-        <div></div>
-        <div></div>
-      </div>
-    `;
-    return;
-  }
+      const asistio = rec ? rec.asistio : null;
 
-  for(const r of data){
-    cont.innerHTML += `
-      <div class="tr">
-        <div>${r.nombre}</div>
-        <div>${r.documento}</div>
-        <div>${r.fecha}</div>
-      </div>
-    `;
+      // 🔥 CLAVE: esto arregla tu problema
+      if(asistio !== true && !incMap.get(c.employee_id)){
+        cont.innerHTML += `
+          <div class="tr">
+            <div>${emp.nombre || ""}</div>
+            <div>${emp.documento || ""}</div>
+            <div>${fecha}</div>
+          </div>
+        `;
+      }
+    }
   }
 }
 
@@ -857,7 +876,7 @@ window.selectSession = async (session_id) => {
    await loadAttendanceForAllDates(session_id);
 
 renderSessionDetail();
-    await cargarInasistencias(session_id);
+    await cargarInasistenciasDesdeJS();
 setPill("Listo", "ok");
 renderSessionsList();
 
