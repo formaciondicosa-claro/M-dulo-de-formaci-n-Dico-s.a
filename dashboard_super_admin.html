@@ -801,9 +801,14 @@ async function cargarInasistenciasDesdeJS(){
   // 🔥 traer entregados y retirados (igual que el resumen)
   const { exitMap, retiroMap } = await loadExitAndRetiroMaps(STATE.selectedSessionId);
 
-  for(const d of STATE.sessionDates){
-    const fecha = d.fecha;
+  const hoy = new Date().toISOString().slice(0,10);
 
+for(const d of STATE.sessionDates){
+
+  const fecha = d.fecha;
+
+  // 🚫 IGNORAR FUTURO
+  if(fecha > hoy) continue;
     const map = STATE.attendanceByDate.get(fecha) || new Map();
 
     // 🔥 mismos citados activos del resumen
