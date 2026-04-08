@@ -2429,7 +2429,37 @@ async function trainerInit(){
 
   try{
 
-    const evaluation_id = prompt("Ingresa el ID de la evaluación:");
+    const { data: evaluaciones, error: errEval } = await sb
+  .from("evaluations")
+  .select("id,nombre");
+
+if(errEval){
+  alert("Error cargando evaluaciones");
+  console.error(errEval);
+  return;
+}
+
+if(!evaluaciones || evaluaciones.length === 0){
+  alert("No hay evaluaciones creadas");
+  return;
+}
+
+let lista = "Selecciona una evaluación:\n\n";
+
+evaluaciones.forEach((e, i) => {
+  lista += `${i+1}. ${e.nombre}\n`;
+});
+
+const opcion = prompt(lista);
+
+const index = parseInt(opcion) - 1;
+
+if(isNaN(index) || !evaluaciones[index]){
+  alert("Opción inválida");
+  return;
+}
+
+const evaluation_id = evaluaciones[index].id;
 
     if(!evaluation_id){
       alert("Debes ingresar una evaluación");
