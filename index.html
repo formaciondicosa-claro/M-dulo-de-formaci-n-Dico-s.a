@@ -1900,9 +1900,37 @@ window.adminAddDay = async (session_id) => {
 async function adminSaveIncapacity(){
   const sb = getSB();
   const msg = $("incMsg");
+
   msg.innerHTML = "";
 
-  return;
+  const documento = $("incDoc").value.trim();
+  const desde = $("incDesde").value;
+  const hasta = $("incHasta").value;
+  const obs = $("incObs").value.trim();
+
+  if(!documento || !desde || !hasta){
+    msg.innerHTML = `<span class="err">Completa todos los campos.</span>`;
+    return;
+  }
+
+  try{
+    const { error } = await sb
+      .from("employee_incapacities")
+      .upsert({
+        documento,
+        desde,
+        hasta,
+        observacion: obs || null
+      });
+
+    if(error) throw error;
+
+    msg.innerHTML = `<span class="ok">Incapacidad guardada.</span>`;
+
+  }catch(e){
+    msg.innerHTML = `<span class="err">${e.message}</span>`;
+    console.error(e);
+  }
 }
 
   // ✅ tú escribes DOCUMENTO
