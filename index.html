@@ -504,9 +504,12 @@ async function cargarSubtemas(linea, modulo, nombre){
    SUPABASE
 ========================================================= */
 function getSB(){
-    if(!window.supabase || !window.supabase.createClient){
-    throw new Error("No se cargó Supabase JS. Abre desde Live Server/GitHub Pages o revisa bloqueos.");
+  if(!window.supabase || !window.supabase.createClient){
+    console.error("Supabase no cargó");
+    alert("Error cargando Supabase. Recarga la página.");
+    return null;
   }
+
   window.__sb = window.__sb || window.supabase.createClient(
     SUPABASE_URL,
     SUPABASE_PUBLISHABLE_KEY,
@@ -518,14 +521,12 @@ function getSB(){
       }
     }
   );
+
   return window.__sb;
 }
-
-/* =========================================================
-   AUTH
-========================================================= */
 async function doLogin(){
   const sb = getSB();
+  if(!sb) return;
   const email = val($("email").value);
   const password = val($("password").value);
   const btn = $("btnLogin");
