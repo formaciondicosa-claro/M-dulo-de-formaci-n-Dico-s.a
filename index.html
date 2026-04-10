@@ -1918,24 +1918,22 @@ async function adminSaveIncapacity(){
     return;
   }
 
-  try{
-    const { error } = await sb
-      .from("employee_incapacities")
-      .upsert({
-        documento,
-        desde,
-        hasta,
-        observacion: obs
-      }, { onConflict: "documento" });
+ try{
+  const { error } = await sb
+    .from("employee_incapacities")
+    .insert({
+      documento,
+      desde,
+      hasta,
+      observacion: obs
+    });
 
-    if(error) throw error;
+  if(error) throw error;
 
-    msg.innerHTML = `<span class="ok">Incapacidad guardada.</span>`;
-  }catch(e){
-    msg.innerHTML = `<span class="err">${e.message}</span>`;
-  }
+  msg.innerHTML = `<span class="ok">Incapacidad guardada.</span>`;
+}catch(e){
+  msg.innerHTML = `<span class="err">${e.message}</span>`;
 }
-
 
 
 async function adminClearIncapacity(){
@@ -2811,7 +2809,7 @@ async function trainerLoadSessions(){
 data.forEach(s => {
 
   const selectModulo = document.getElementById(`modulo_${s.id}`);
-  const selectTema = document.getElementById(`tema_${s.id}`);
+ const selectTema = document.getElementById(`tema_${s.id}`);
   const selectSubtema = document.getElementById(`subtema_${s.id}`);
 
   if(!selectModulo) return;
