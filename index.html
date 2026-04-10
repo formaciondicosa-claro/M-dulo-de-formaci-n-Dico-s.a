@@ -2603,17 +2603,18 @@ const evaluation_id = evaluaciones[index].id;
       .from("evaluation_tokens")
       const hoy = new Date().toISOString().slice(0,10);
 
-.insert({
-  session_id: session_id,
-  evaluation_id: evaluation_id,
-  token: token,
-  session_date: hoy
-});
+const { error } = await getSB()
+  .from("evaluation_tokens")
+  .insert({
+    session_id: session_id,
+    evaluation_id: evaluation_id,
+    token: token,
+    session_date: hoy
+  });
 
-    if(error){
+if(error){
   console.error(error);
-  alert("ERROR REAL: " + error.message);
-  return;
+  alert("Error generando token");
 }
 
     alert("Token generado: " + token);
@@ -2871,7 +2872,7 @@ data.forEach(s => {
   selectModulo.addEventListener("change", async () => {
 
     const modulo = selectModulo.value;
-    const linea = s.linea;
+ const linea = s.linea || "Masivo";
 
     const temas = await cargarTemasUnicos(linea, modulo);
 
