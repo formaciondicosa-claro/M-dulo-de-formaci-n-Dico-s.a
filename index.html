@@ -465,12 +465,46 @@ function parseXLSX(arrayBuffer){
   const json = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false });
   return json.map(r => r.map(c => (c ?? "").toString())).filter(r => r.some(c => String(c).trim() !== ""));
 }
+async function cargarTemasUnicos(linea, modulo){
+  const sb = getSB();
+
+  const { data, error } = await sb
+    .from("training_topics")
+    .select("nombre")
+    .eq("linea", linea)
+    .eq("modulo", modulo);
+
+  if(error){
+    console.error(error);
+    return [];
+  }
+
+  return [...new Set((data || []).map(d => d.nombre))];
+}
+
+async function cargarSubtemas(linea, modulo, nombre){
+  const sb = getSB();
+
+  const { data, error } = await sb
+    .from("training_topics")
+    .select("subtema")
+    .eq("linea", linea)
+    .eq("modulo", modulo)
+    .eq("nombre", nombre);
+
+  if(error){
+    console.error(error);
+    return [];
+  }
+
+  return data || [];
+}
 
 /* =========================================================
    SUPABASE
 ========================================================= */
 function getSB(){
-  if(!window.supabase || !window.supabase.createClient){
+    if(!window.supabase || !window.supabase.createClient){
     throw new Error("No se cargó Supabase JS. Abre desde Live Server/GitHub Pages o revisa bloqueos.");
   }
   window.__sb = window.__sb || window.supabase.createClient(
@@ -1005,10 +1039,102 @@ async function bootApp(){
     await trainerInit();
   }
 }
+  async function trainerLoadSessions(){
+  const sb = getSB();
+  const cont = document.getElementById("trainerSessions");
+
+  cont.innerHTML = `<div class="small">Cargando...</div>`;
+
+  try{
+    const { data: { user } } = await sb.auth.getUser();
+
+    const { data, error } = await sb
+      .from("sessions")
+      .select("*")
+      .eq("formador_user_id", user.id)
+      .order("fecha", { ascending: false });
+
+    if(error) throw error;
+
+    if(!data || data.length === 0){
+      cont.innerHTML = `<div class="item"><div class="small">No tienes sesiones.</div></div>`;
+      return;
+    }
+
+    cont.innerHTML = data.map(s => `
+      <div class="item">
+        <b>Sesión</b>
+        <div class="small">${s.fecha} · ${s.ciudad || ""}</div>
+
+        <!-- 🔥 AQUI VAN LOS SELECTS -->
+        <div style="margin-top:10px;">
+          <label>Módulo</label>
+          <select id="modulo_${s.id}"></select>
+
+          <label>Tema</label>
+          <select id="tema_${s.id}"></select>
+
+          <label>Subtemas</label>
+          <select id="subtema_${s.id}" multiple></select>
+        </div>
+      </div>
+    `).join("");
+
+    // 🔥 CONEXIÓN
+    data.forEach(s => {
+
+      const selectModulo = document.getElementById(`modulo_${s.id}`);
+      const selectTema = document.getElementById(`tema_${s.id}`);
+      const selectSubtema = document.getElementById(`subtema_${s.id}`);
+
+      if(!selectModulo) return;
+
+      const modulos = ["Modulo 1"];
+
+      selectModulo.innerHTML =
+        `<option value="">Selecciona módulo...</option>` +
+        modulos.map(m => `<option value="${m}">${m}</option>`).join("");
+
+      selectModulo.addEventListener("change", async () => {
+
+        const modulo = selectModulo.value;
+        const linea = s.linea;
+
+        const temas = await cargarTemasUnicos(linea, modulo);
+
+        selectTema.innerHTML =
+          `<option value="">Selecciona tema...</option>` +
+          temas.map(t => `<option value="${t}">${t}</option>`).join("");
+
+        selectSubtema.innerHTML = "";
+      });
+
+      selectTema.addEventListener("change", async () => {
+
+        const modulo = selectModulo.value;
+        const linea = s.linea;
+        const nombre = selectTema.value;
+
+        const subtemas = await cargarSubtemas(linea, modulo, nombre);
+
+        selectSubtema.innerHTML = subtemas.map(st =>
+          `<option value="${st.subtema}">${st.subtema}</option>`
+        ).join("");
+
+      });
+
+    });
+
+  }catch(e){
+    cont.innerHTML = `<div class="item"><span class="err">Error:</span> ${e.message}</div>`;
+    console.error(e);
+  }
+}
 async function adminInit(){
   await adminRefreshAll();
 }
 async function adminRefreshAll(){
+  await trainerLoadSessions();
   await adminLoadFormadores();
   await adminLoadSessions();
   await adminLoadSessionSelects();
@@ -2420,6 +2546,7 @@ function wireTrainerHandlers(){
 }
 
 async function trainerInit(){
+  await trainerLoadSessions();
   await trainerLoadAbsenceAlerts();   // ✅ alertas primero
   await trainerLoadSessions();        // ✅ luego sesiones
 }
@@ -2492,6 +2619,7 @@ const evaluation_id = evaluaciones[index].id;
     alert("Error generando token");
   }
 }
+  
  async function trainerLoadAbsenceAlerts(){
   const sb = getSB();
   const cont = $("absenceAlertsTrainer");
@@ -2501,6 +2629,20 @@ const evaluation_id = evaluaciones[index].id;
 
   // header
   cont.innerHTML = `
+  data.forEach(s => {
+
+  const selectModulo = document.getElementById(`modulo_${s.id}`);
+
+  if(!selectModulo) return;
+
+  // 🔥 LISTA SIMPLE POR AHORA
+  const modulos = ["Modulo 1"];
+
+  selectModulo.innerHTML =
+    `<option value="">Selecciona módulo...</option>` +
+    modulos.map(m => `<option value="${m}">${m}</option>`).join("");
+
+});
     <div class="tr th" style="grid-template-columns:${grid};">
       <div>Empleado</div>
       <div>Documento</div>
@@ -2670,6 +2812,16 @@ async function trainerLoadSessions(){
   (Se guarda en <code>session_dates</code> solo para la fecha seleccionada)
 </div>
 
+<div style="margin-top:10px;">
+  <label>Módulo</label>
+  <select id="modulo_${s.id}"></select>
+
+  <label>Tema</label>
+  <select id="tema_${s.id}"></select>
+
+  <label>Subtemas</label>
+  <select id="subtema_${s.id}" multiple></select>
+</div>
 
           <div class="actions" style="margin-top:10px;">
             <button class="btnMini btnGhost" type="button"
@@ -2696,6 +2848,94 @@ async function trainerLoadSessions(){
         </div>
       `;
     }).join("");
+data.forEach(s => {
+
+  const selectModulo = document.getElementById(`modulo_${s.id}`);
+  const selectTema = document.getElementById(`tema_${s.id}`);
+  const selectSubtema = document.getElementById(`subtema_${s.id}`);
+
+  if(!selectModulo) return;
+
+  // 🔥 MODULOS (ajustaremos después)
+  const modulos = ["Modulo 1"];
+
+  selectModulo.innerHTML =
+    `<option value="">Selecciona módulo...</option>` +
+    modulos.map(m => `<option value="${m}">${m}</option>`).join("");
+
+  // 🔴 CUANDO CAMBIA MODULO
+  selectModulo.addEventListener("change", async () => {
+
+    const modulo = selectModulo.value;
+    const linea = s.linea;
+
+    const temas = await cargarTemasUnicos(linea, modulo);
+
+    selectTema.innerHTML =
+      `<option value="">Selecciona tema...</option>` +
+      temas.map(t => `<option value="${t}">${t}</option>`).join("");
+
+    selectSubtema.innerHTML = "";
+  });
+
+  // 🔴 CUANDO CAMBIA TEMA
+  selectTema.addEventListener("change", async () => {
+
+    const modulo = selectModulo.value;
+    const linea = s.linea;
+    const nombre = selectTema.value;
+
+    const subtemas = await cargarSubtemas(linea, modulo, nombre);
+
+    selectSubtema.innerHTML = subtemas.map(st =>
+      `<option value="${st.subtema}">${st.subtema}</option>`
+    ).join("");
+    data.forEach(s => {
+
+  const selectModulo = document.getElementById(`modulo_${s.id}`);
+  const selectTema = document.getElementById(`tema_${s.id}`);
+  const selectSubtema = document.getElementById(`subtema_${s.id}`);
+
+  if(!selectModulo) return;
+
+  // 🔥 MODULOS (por ahora fijo)
+  const modulos = ["Modulo 1"];
+
+  selectModulo.innerHTML =
+    `<option value="">Selecciona módulo...</option>` +
+    modulos.map(m => `<option value="${m}">${m}</option>`).join("");
+
+  // 👉 CUANDO CAMBIA MODULO
+  selectModulo.addEventListener("change", async () => {
+
+    const modulo = selectModulo.value;
+    const linea = s.linea;
+
+    const temas = await cargarTemasUnicos(linea, modulo);
+
+    selectTema.innerHTML =
+      `<option value="">Selecciona tema...</option>` +
+      temas.map(t => `<option value="${t}">${t}</option>`).join("");
+
+    selectSubtema.innerHTML = "";
+  });
+
+  // 👉 CUANDO CAMBIA TEMA
+  selectTema.addEventListener("change", async () => {
+
+    const modulo = selectModulo.value;
+    const linea = s.linea;
+    const nombre = selectTema.value;
+
+    const subtemas = await cargarSubtemas(linea, modulo, nombre);
+
+    selectSubtema.innerHTML = subtemas.map(st =>
+      `<option value="${st.subtema}">${st.subtema}</option>`
+    ).join("");
+
+  });
+
+});
 
     for(const s of sessions){
   await trainerLoadDatesInto(s.id);
