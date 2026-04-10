@@ -1133,8 +1133,10 @@ async function bootApp(){
 async function adminInit(){
   await adminRefreshAll();
 }
-async function adminRefreshAll(){
+  async function trainerInit(){
   await trainerLoadSessions();
+}
+async function adminRefreshAll(){
   await adminLoadFormadores();
   await adminLoadSessions();
   await adminLoadSessionSelects();
