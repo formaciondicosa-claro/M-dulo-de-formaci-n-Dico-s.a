@@ -2470,9 +2470,13 @@ const evaluation_id = evaluaciones[index].id;
 
     const { error } = await sb
       .from("evaluation_tokens")
-      .insert({
+      const hoy = new Date().toISOString().slice(0,10);
+
+.insert({
   session_id: session_id,
-  token: token
+  evaluation_id: evaluation_id,
+  token: token,
+  session_date: hoy
 });
 
     if(error){
