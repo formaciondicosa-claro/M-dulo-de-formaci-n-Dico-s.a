@@ -465,9 +465,8 @@ function parseXLSX(arrayBuffer){
   const json = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false });
   return json.map(r => r.map(c => (c ?? "").toString())).filter(r => r.some(c => String(c).trim() !== ""));
 }
-async function cargarTemasUnicos(){
-  return ["tema prueba"];
-}
+
+  async function cargarTemasUnicos(linea, modulo){
   const sb = getSB();
 
   const { data, error } = await sb
@@ -484,9 +483,7 @@ async function cargarTemasUnicos(){
   return [...new Set((data || []).map(d => d.nombre))];
 }
 
-async function cargarSubtemas(){
-  return [{ subtema: "subtema prueba" }];
-}
+async function cargarSubtemas(linea, modulo, nombre){
   const sb = getSB();
 
   const { data, error } = await sb
@@ -503,7 +500,6 @@ async function cargarSubtemas(){
 
   return data || [];
 }
-
 /* =========================================================
    SUPABASE
 ========================================================= */
@@ -684,7 +680,9 @@ async function getProfile(user){
   }
   return data;
 }
-
+function wireTrainerHandlers(){
+  // vacío por ahora
+}
 /* =========================================================
    UI
 ========================================================= */
@@ -700,11 +698,7 @@ function setPanels(role){
   }else{
     $("leftPanel").innerHTML = renderTrainerLeft();
     $("rightPanel").innerHTML = renderTrainerRight();
-    wireTrainerHandlers();
-    function wireTrainerHandlers(){
-  // vacío por ahora
-}
-  }
+    wireTrainerHandlers();  }
 }
 
 function renderAdminLeft(){
@@ -1058,7 +1052,7 @@ async function bootApp(){
 
     const { data, error } = await sb
       .from("sessions")
-      .select("*")
+      .select("id, fecha, ciudad, linea")
       .eq("formador_user_id", user.id)
       .order("fecha", { ascending: false });
 
@@ -1106,7 +1100,7 @@ async function bootApp(){
       selectModulo.addEventListener("change", async () => {
 
         const modulo = selectModulo.value;
-        const linea = s.linea;
+        const linea = s.linea || "Masivo";
 
         const temas = await cargarTemasUnicos(linea, modulo);
 
@@ -1505,7 +1499,7 @@ async function adminCreateTraining(){
     $("trCertifica").value = "true";
 
     await adminRefreshAll();
-    await adminLoadTrainings();
+    adminLoadTrainings();
 
   }catch(e){
     msg.innerHTML = `<span class="err">Error:</span> ${esc(e.message || e)}`;
