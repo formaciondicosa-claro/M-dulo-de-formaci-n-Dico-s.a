@@ -1895,16 +1895,15 @@ window.adminAddDay = async (session_id) => {
  
 /* =========================================================
    INCAPACIDADES (SUPER ADMIN)
-   - Guarda/actualiza por documento
-   - Borra por documento
- Requiere tabla: employee_incapacities(documento, desde, hasta, obs, updated_at)
-   y/o un UNIQUE por documento (recomendado)
 ========================================================= */
 
 async function adminSaveIncapacity(){
   const sb = getSB();
   const msg = $("incMsg");
   msg.innerHTML = "";
+
+  return;
+}
 
   // ✅ tú escribes DOCUMENTO
   const documento = normDoc($("incDoc").value);
@@ -2599,11 +2598,9 @@ const evaluation_id = evaluaciones[index].id;
 
     const token = Math.random().toString(36).substring(2,8).toUpperCase();
 
-    const { error } = await sb
-      .from("evaluation_tokens")
-      const hoy = new Date().toISOString().slice(0,10);
+   const hoy = new Date().toISOString().slice(0,10);
 
-const { error } = await getSB()
+const { error: insertError } = await sb
   .from("evaluation_tokens")
   .insert({
     session_id: session_id,
@@ -2612,6 +2609,11 @@ const { error } = await getSB()
     session_date: hoy
   });
 
+if(insertError){
+  console.error(insertError);
+  alert("Error generando token");
+  return;
+}
 if(error){
   console.error(error);
   alert("Error generando token");
@@ -2634,7 +2636,7 @@ if(error){
 
   // header
   cont.innerHTML = `
-  data.forEach(s => {
+  sessions.forEach(s => {
 
   const selectModulo = document.getElementById(`modulo_${s.id}`);
 
@@ -2897,51 +2899,7 @@ data.forEach(s => {
     ).join("");
     data.forEach(s => {
 
-  const selectModulo = document.getElementById(`modulo_${s.id}`);
-  const selectTema = document.getElementById(`tema_${s.id}`);
-  const selectSubtema = document.getElementById(`subtema_${s.id}`);
-
-  if(!selectModulo) return;
-
-  // 🔥 MODULOS (por ahora fijo)
-  const modulos = ["Modulo 1"];
-
-  selectModulo.innerHTML =
-    `<option value="">Selecciona módulo...</option>` +
-    modulos.map(m => `<option value="${m}">${m}</option>`).join("");
-
-  // 👉 CUANDO CAMBIA MODULO
-  selectModulo.addEventListener("change", async () => {
-
-    const modulo = selectModulo.value;
-    const linea = s.linea;
-
-    const temas = await cargarTemasUnicos(linea, modulo);
-
-    selectTema.innerHTML =
-      `<option value="">Selecciona tema...</option>` +
-      temas.map(t => `<option value="${t}">${t}</option>`).join("");
-
-    selectSubtema.innerHTML = "";
-  });
-
-  // 👉 CUANDO CAMBIA TEMA
-  selectTema.addEventListener("change", async () => {
-
-    const modulo = selectModulo.value;
-    const linea = s.linea;
-    const nombre = selectTema.value;
-
-    const subtemas = await cargarSubtemas(linea, modulo, nombre);
-
-    selectSubtema.innerHTML = subtemas.map(st =>
-      `<option value="${st.subtema}">${st.subtema}</option>`
-    ).join("");
-
-  });
-
-});
-
+  
     for(const s of sessions){
   await trainerLoadDatesInto(s.id);
 
