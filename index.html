@@ -465,7 +465,9 @@ function parseXLSX(arrayBuffer){
   const json = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false });
   return json.map(r => r.map(c => (c ?? "").toString())).filter(r => r.some(c => String(c).trim() !== ""));
 }
-async function cargarTemasUnicos(linea, modulo){
+async function cargarTemasUnicos(){
+  return ["tema prueba"];
+}
   const sb = getSB();
 
   const { data, error } = await sb
@@ -482,7 +484,9 @@ async function cargarTemasUnicos(linea, modulo){
   return [...new Set((data || []).map(d => d.nombre))];
 }
 
-async function cargarSubtemas(linea, modulo, nombre){
+async function cargarSubtemas(){
+  return [{ subtema: "subtema prueba" }];
+}
   const sb = getSB();
 
   const { data, error } = await sb
