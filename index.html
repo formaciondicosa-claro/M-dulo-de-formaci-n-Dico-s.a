@@ -1903,13 +1903,18 @@ async function adminSaveIncapacity(){
 
   msg.innerHTML = "";
 
-  const documento = $("incDoc").value.trim();
+  const documento = normDoc($("incDoc").value);
   const desde = $("incDesde").value;
   const hasta = $("incHasta").value;
-  const obs = $("incObs").value.trim();
+  const obs = $("incObs").value || null;
 
-  if(!documento || !desde || !hasta){
-    msg.innerHTML = `<span class="err">Completa todos los campos.</span>`;
+  if(!documento){
+    msg.innerHTML = `<span class="err">Documento requerido.</span>`;
+    return;
+  }
+
+  if(!desde || !hasta){
+    msg.innerHTML = `<span class="err">Debes seleccionar fechas.</span>`;
     return;
   }
 
@@ -1920,94 +1925,14 @@ async function adminSaveIncapacity(){
         documento,
         desde,
         hasta,
-        observacion: obs || null
-      });
+        observacion: obs
+      }, { onConflict: "documento" });
 
     if(error) throw error;
 
     msg.innerHTML = `<span class="ok">Incapacidad guardada.</span>`;
-
   }catch(e){
     msg.innerHTML = `<span class="err">${e.message}</span>`;
-    console.error(e);
-  }
-}
-
-  // ✅ tú escribes DOCUMENTO
-  const documento = normDoc($("incDoc").value);
-  const desde = val($("incDesde").value);
-  const hasta = val($("incHasta").value);
-  const observacion = val($("incObs").value) || null;
-
-  if(!documento){
-    msg.innerHTML = `<span class="err">Debes ingresar el documento.</span>`;
-    return;
-  }
-  if(!desde || !hasta){
-    msg.innerHTML = `<span class="err">Debes seleccionar Desde y Hasta.</span>`;
-    return;
-  }
-  if(hasta < desde){
-    msg.innerHTML = `<span class="err">La fecha Hasta no puede ser menor que Desde.</span>`;
-    return;
-  }
-
-  $("btnIncSave").disabled = true;
-  $("btnIncSave").textContent = "Guardando...";
-  setStatus("Buscando empleado por documento...");
-
-  try{
-    // 1) Buscar employee_id por documento
-    const { data: emp, error: e0 } = await sb
-      .from("employees")
-      .select("id,documento,nombre")
-      .eq("documento", documento)
-      .maybeSingle();
-
-    if(e0) throw e0;
-    if(!emp?.id){
-      msg.innerHTML = `<span class="err">Documento no existe en employees:</span> ${esc(documento)}`;
-      setStatus(`<span class="err">No encontrado en employees.</span>`);
-      return;
-    }
-
-    // 2) Guardar incapacidad por employee_id
-    setStatus("Guardando incapacidad...");
-
-    const payload = {
-  employee_id: emp.id,     // ✅ lo que usa la BD
-  desde,
-  hasta,
-  observacion
-};
-
-let r = await sb
-  .from("employee_incapacities")
-  .upsert(payload, { onConflict: "employee_id" })
-  .select("id,employee_id,desde,hasta,observacion")
-  .single();
-
-// fallback si no existe unique y supabase se queja
-if (r.error && String(r.error.message || "").toLowerCase().includes("on conflict")) {
-  r = await sb
-    .from("employee_incapacities")
-    .insert(payload)
-    .select("id,employee_id,desde,hasta,observacion")
-    .single();
-}
-if (r.error) throw r.error;
-
-    msg.innerHTML = `<span class="ok">Incapacidad registrada.</span> ${esc(emp.nombre || "")} · ${esc(documento)} (${esc(desde)} → ${esc(hasta)})`;
-    setStatus(`<span class="ok">Incapacidad guardada.</span>`);
-    setLog({ incapacidad_saved: r.data, empleado: emp });
-
-  }catch(e){
-    msg.innerHTML = `<span class="err">Error:</span> ${esc(e.message || e)}`;
-    setStatus(`<span class="err">No se pudo guardar incapacidad.</span>`);
-    setLog(e);
-  }finally{
-    $("btnIncSave").disabled = false;
-    $("btnIncSave").textContent = "Registrar / Actualizar";
   }
 }
 
