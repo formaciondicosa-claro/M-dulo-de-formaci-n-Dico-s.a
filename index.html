@@ -1899,13 +1899,14 @@ window.adminAddDay = async (session_id) => {
 
 async function adminSaveIncapacity(){
   const sb = getSB();
-  const msg = $("incMsg");
+  if(!sb) return;
 
+  const msg = $("incMsg");
   msg.innerHTML = "";
 
   const documento = normDoc($("incDoc").value);
-  const desde = $("incDesde").value;
-  const hasta = $("incHasta").value;
+  const desdeRaw = $("incDesde").value;
+  const hastaRaw = $("incHasta").value;
   const obs = $("incObs").value || null;
 
   if(!documento){
@@ -1913,86 +1914,127 @@ async function adminSaveIncapacity(){
     return;
   }
 
+  if(!desdeRaw || !hastaRaw){
+    msg.innerHTML = `<span class="err">Debes ingresar fechas desde y hasta.</span>`;
+    return;
+  }
+
+  const desde = parseDateToISO(desdeRaw);
+  const hasta = parseDateToISO(hastaRaw);
+
   if(!desde || !hasta){
-    msg.innerHTML = `<span class="err">Debes seleccionar fechas.</span>`;
+    msg.innerHTML = `<span class="err">Fechas inválidas.</span>`;
     return;
   }
 
- try{
-  const { error } = await sb
-    .from("employee_incapacities")
-    .insert({
-      documento,
-      desde,
-      hasta,
-      observacion: obs
-    });
-
-  if(error) throw error;
-
-  msg.innerHTML = `<span class="ok">Incapacidad guardada.</span>`;
-}catch(e){
-  msg.innerHTML = `<span class="err">${e.message}</span>`;
-}
-  }
-
-
-async function adminClearIncapacity(){
-  const sb = getSB();
-  const msg = $("incMsg");
-  msg.innerHTML = "";
-
-  const documento = normDoc($("incDoc").value);
-  if(!documento){
-    msg.innerHTML = `<span class="err">Debes ingresar el documento.</span>`;
+  if(hasta < desde){
+    msg.innerHTML = `<span class="err">La fecha hasta no puede ser menor que desde.</span>`;
     return;
   }
 
-  if(!confirm(`¿Quitar incapacidades del documento ${documento}?`)) return;
-
-  $("btnIncClear").disabled = true;
-  $("btnIncClear").textContent = "Quitando...";
-  setStatus("Buscando empleado por documento...");
+  $("btnIncSave").disabled = true;
+  setStatus("Buscando empleado...");
 
   try{
-    // 1) Buscar employee_id por documento
-    const { data: emp, error: e0 } = await sb
+    // 🔎 1. BUSCAR EMPLEADO POR DOCUMENTO
+    const { data: emp, error: e1 } = await sb
       .from("employees")
       .select("id,documento,nombre")
       .eq("documento", documento)
       .maybeSingle();
 
-    if(e0) throw e0;
-    if(!emp?.id){
-      msg.innerHTML = `<span class="err">Documento no existe en employees:</span> ${esc(documento)}`;
-      setStatus(`<span class="err">No encontrado en employees.</span>`);
+    if(e1) throw e1;
+
+    if(!emp){
+      msg.innerHTML = `<span class="err">Empleado no encontrado.</span>`;
       return;
     }
 
-    // 2) Borrar por employee_id (borra todas las incapacidades del empleado)
-    setStatus("Eliminando incapacidades...");
-    const { error } = await sb
+    const employee_id = emp.id;
+
+    setStatus("Guardando incapacidad...");
+
+    // 🔥 2. UPSERT (CLAVE POR employee_id)
+    const payload = {
+      employee_id,
+      desde,
+      hasta,
+      observacion: obs
+    };
+
+    const { error: e2 } = await sb
+      .from("employee_incapacities")
+      .upsert(payload, { onConflict: "employee_id" });
+
+    if(e2) throw e2;
+
+    msg.innerHTML = `<span class="ok">Incapacidad guardada.</span>`;
+    setStatus(`<span class="ok">Incapacidad registrada para ${esc(emp.nombre)}</span>`);
+
+    setLog({ incapacidad: payload });
+
+  }catch(e){
+    msg.innerHTML = `<span class="err">Error:</span> ${esc(e.message || e)}`;
+    setStatus(`<span class="err">Error guardando incapacidad.</span>`);
+    setLog(e);
+  }finally{
+    $("btnIncSave").disabled = false;
+  }
+}
+
+async function adminClearIncapacity(){
+  const sb = getSB();
+  if(!sb) return;
+
+  const msg = $("incMsg");
+  msg.innerHTML = "";
+
+  const documento = normDoc($("incDoc").value);
+
+  if(!documento){
+    msg.innerHTML = `<span class="err">Documento requerido.</span>`;
+    return;
+  }
+
+  $("btnIncClear").disabled = true;
+  setStatus("Buscando empleado...");
+
+  try{
+    // 🔎 buscar empleado
+    const { data: emp, error: e1 } = await sb
+      .from("employees")
+      .select("id,nombre")
+      .eq("documento", documento)
+      .maybeSingle();
+
+    if(e1) throw e1;
+
+    if(!emp){
+      msg.innerHTML = `<span class="err">Empleado no encontrado.</span>`;
+      return;
+    }
+
+    setStatus("Eliminando incapacidad...");
+
+    // ❌ eliminar incapacidad
+    const { error: e2 } = await sb
       .from("employee_incapacities")
       .delete()
       .eq("employee_id", emp.id);
 
-    if(error) throw error;
+    if(e2) throw e2;
 
-    msg.innerHTML = `<span class="ok">Incapacidades eliminadas.</span> ${esc(emp.nombre || "")} · ${esc(documento)}`;
-    setStatus(`<span class="ok">Incapacidades eliminadas.</span>`);
-    setLog({ incapacidad_deleted_for_employee: emp.id, empleado: emp });
+    msg.innerHTML = `<span class="ok">Incapacidad eliminada.</span>`;
+    setStatus(`<span class="ok">Incapacidad removida de ${esc(emp.nombre)}</span>`);
 
-    $("incDesde").value = "";
-    $("incHasta").value = "";
-    $("incObs").value = "";
+    setLog({ incapacidad_eliminada: emp.id });
 
   }catch(e){
     msg.innerHTML = `<span class="err">Error:</span> ${esc(e.message || e)}`;
-    setStatus(`<span class="err">No se pudo quitar incapacidad.</span>`);
+    setStatus(`<span class="err">Error eliminando incapacidad.</span>`);
     setLog(e);
   }finally{
     $("btnIncClear").disabled = false;
-    $("btnIncClear").textContent = "Quitar incapacidad";
   }
 }
 
