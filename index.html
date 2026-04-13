@@ -2629,33 +2629,31 @@ if(error){
   const grid = "1fr 120px 1fr 120px 120px 70px 90px 120px";
 
   // header
-  cont.innerHTML = `
-  sessions.forEach(s => {
+ cont.innerHTML = `
+  <div class="tr th" style="grid-template-columns:${grid};">
+    <div>Empleado</div>
+    <div>Documento</div>
+    <div>Sesión</div>
+    <div>Desde</div>
+    <div>Hasta</div>
+    <div>Días</div>
+    <div>Incap.</div>
+    <div>Regresa</div>
+  </div>
+`;
+// ✅ PASO 2: JavaScript NORMAL (fuera del HTML)
+  try {
+    const { data: { user } } = await sb.auth.getUser();
+    if(!user) throw new Error("No hay usuario autenticado.");
 
-  const selectModulo = document.getElementById(`modulo_${s.id}`);;
+    const { data: rows, error } = await sb
+      .from("v_absence_alerts_3days_with_incapacity")
+      .select("*")
+      .order("end_date", { ascending: false });
 
-  if(!selectModulo) return;
+    if(error) throw error;
 
-  // 🔥 LISTA SIMPLE POR AHORA
-  const modulos = ["Modulo 1"];
-
-  selectModulo.innerHTML =
-    `<option value="">Selecciona módulo...</option>` +
-    modulos.map(m => `<option value="${m}">${m}</option>`).join("");
-
-});
-    <div class="tr th" style="grid-template-columns:${grid};">
-      <div>Empleado</div>
-      <div>Documento</div>
-      <div>Sesión</div>
-      <div>Desde</div>
-      <div>Hasta</div>
-      <div>Días</div>
-      <div>Incap.</div>
-      <div>Regresa</div>
-    </div>
-  `;
-
+    // después aquí agregas filas con cont.innerHTML += ...
   try{
     const { data: { user } } = await sb.auth.getUser();
     if(!user) throw new Error("No hay usuario autenticado.");
