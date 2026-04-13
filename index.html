@@ -3198,7 +3198,9 @@ window.trainerHandOver = async (session_id, employee_id, exit_date) => {
     setStatus(`<span class="ok">Entregado a operación.</span> Desde: <code>${esc(exit_date)}</code>`);
     setLog({ session_exit_saved: r.data });
 
-    await trainerLoadCitadosInto(session_id); // refrescar tabla
+    // ✅ NO recargar todo: solo actualizar visualmente
+setStatus(`<span class="ok">Asistencia guardada.</span>`);
+
   }catch(e){
     setStatus(`<span class="err">Error entregando:</span> ${esc(e.message || e)}`);
     setLog(e);
