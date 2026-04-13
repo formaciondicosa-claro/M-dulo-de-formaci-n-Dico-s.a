@@ -2338,114 +2338,92 @@ function setLate(session_id, employee_id, session_date, val){
   if(val) localStorage.setItem(lateKey(session_id, employee_id, session_date), "1");
   else localStorage.removeItem(lateKey(session_id, employee_id, session_date));
 }
-async function trainerLoadModulesInto(session_id){
+
+
+async function obtenerLineaDeSesion(session_id){
   const sb = getSB();
-  const box = document.querySelector(`#sess_${CSS.escape(session_id)}`);
-  if(!box) return;
 
+  const { data, error } = await sb
+    .from("sessions")
+    .select("linea")
+    .eq("id", session_id)
+    .single();
+
+  if(error){
+    alert("Error leyendo la línea de la sesión");
+    throw error;
+  }
+
+  return data.linea;
+}
+  async function trainerLoadModulesInto(session_id){
+  const sb = getSB();
+  const box = document.querySelector(`#sess_${session_id}`);
   const selMod = box.querySelector(".modSelect");
-  if(!selMod) return;
 
+  // limpiar
   selMod.innerHTML = `<option value="">-- Selecciona módulo --</option>`;
+
+  const linea = await obtenerLineaDeSesion(session_id);
 
   const { data, error } = await sb
     .from("training_topics")
-    .select("module_code, module_name")
-    .eq("is_active", true)
-    .order("module_code", { ascending: true });
+    .select("modulo")
+    .eq("linea", linea);
 
-
-  if(error){ console.error(error); return; }
-
-   const seen = new Set();
-  for(const r of (data||[])){
-    // ✅ normalizar clave para evitar duplicados por espacios/mayúsculas
-    const codeRaw = (r.module_code ?? "").toString();
-    const codeKey = codeRaw.trim().toUpperCase();
-    if(!codeKey) continue;
-
-    if(seen.has(codeKey)) continue;
-    seen.add(codeKey);
-
-    const opt = document.createElement("option");
-    // ✅ guardamos el código limpio (sin espacios)
-    opt.value = codeRaw.trim();
-    // ✅ nombre del módulo (si viene vacío, mostramos el código)
-    opt.textContent = (r.module_name ?? "").toString().trim() || codeRaw.trim();
-    selMod.appendChild(opt);
+  if(error){
+    alert("Error cargando módulos");
+    return;
   }
 
+  // quitar repetidos
+  const modulosUnicos = [...new Set(
+    (data || []).map(r => r.modulo).filter(Boolean)
+  )];
+
+  for(const m of modulosUnicos){
+    const opt = document.createElement("option");
+    opt.value = m;
+    opt.textContent = m;
+    selMod.appendChild(opt);
+  }
 }
-
-async function trainerLoadTopicsForModule(session_id, module_code){
+async function trainerLoadTopicsForModule(session_id, modulo){
   const sb = getSB();
-  const box = document.querySelector(`#sess_${CSS.escape(session_id)}`);
-  if(!box) return;
-
+  const box = document.querySelector(`#sess_${session_id}`);
   const selTopic = box.querySelector(".topicSelect");
-  const selDate  = box.querySelector(".dateSelect");
-  if(!selTopic || !selDate) return;
 
   selTopic.innerHTML = "";
   selTopic.disabled = true;
 
-  if(!module_code) return;
+  if(!modulo) return;
 
-  const session_date_id = selDate.value;
-  if(!session_date_id){
-    selTopic.innerHTML = `<option value="">(Selecciona primero la fecha)</option>`;
-    return;
-  }
+  const linea = await obtenerLineaDeSesion(session_id);
 
-  // 🔥 1. TRAER DATOS DE LA SESIÓN
-  const { data: session, error: e1 } = await sb
-    .from("sessions")
-    .select("linea, tecnologia, trainings(nombre)")
-    .eq("id", session_id)
-    .single();
-
-  if(e1){
-    console.error(e1);
-    return;
-  }
-
-  const training = session.trainings?.nombre;
-  const linea = session.linea;
-  const tecnologias = session.tecnologia ? [session.tecnologia] : [];
-
-  // 🔥 2. QUERY BIEN ARMADA
-  let query = sb
+  const { data, error } = await sb
     .from("training_topics")
-    .select("id, topic_label")
-    .eq("is_active", true)
-    .eq("module_code", module_code)
-    .eq("training", training)
-    .eq("linea", linea);
-
-  if (tecnologias.length > 0) {
-    query = query.in("tecnologia", tecnologias);
-  } else {
-    query = query.is("tecnologia", null);
-  }
-
-  const { data, error } = await query.order("topic_label");
+    .select("nombre")
+    .eq("linea", linea)
+    .eq("modulo", modulo);
 
   if(error){
-    console.error(error);
+    alert("Error cargando temas");
     return;
   }
 
-  // 🔥 3. PINTAR TEMAS
-  for(const t of (data || [])){
+  const temasUnicos = [...new Set(
+    (data || []).map(r => r.nombre).filter(Boolean)
+  )];
+
+  for(const t of temasUnicos){
     const opt = document.createElement("option");
-    opt.value = t.id;
-    opt.textContent = t.topic_label;
+    opt.value = t;
+    opt.textContent = t;
     selTopic.appendChild(opt);
   }
 
   selTopic.disabled = false;
 }
-
 function wireTrainerHandlers(){
   $("btnRefreshTrainer").onclick = trainerInit;
 }
@@ -2662,14 +2640,7 @@ async function trainerLoadSessions(){
 </div>
 
 <div style="margin-top:10px;">
-  <label>Módulo</label>
-  <select id="modulo_${s.id}"></select>
-
-  <label>Tema</label>
-  <select id="tema_${s.id}"></select>
-
-  <label>Subtemas</label>
-  <select id="subtema_${s.id}" multiple></select>
+  
 </div>
 
           <div class="actions" style="margin-top:10px;">
@@ -2700,26 +2671,24 @@ async function trainerLoadSessions(){
 // ✅ Inicializar cada sesión renderizada
 for (const s of sessions) {
 
-  // 1) Cargar fechas reales (session_dates)
+  // 1️⃣ Cargar fechas reales de la sesión
   await trainerLoadDatesInto(s.id);
 
-  // 2) Cargar módulos disponibles
+  // 2️⃣ Cargar módulos según la LÍNEA de la sesión
   await trainerLoadModulesInto(s.id);
 
-  // 3) Evento: al cambiar módulo → cargar temas
-  const box = document.querySelector(`#sess_${CSS.escape(s.id)}`);
-  const selMod = box?.querySelector(".modSelect");
+  const box = document.querySelector(`#sess_${s.id}`);
+  const selMod = box.querySelector(".modSelect");
+  const selTopic = box.querySelector(".topicSelect");
 
-  if (selMod) {
-    selMod.onchange = async () => {
-      await trainerLoadTopicsForModule(s.id, selMod.value);
-    };
-  }
+  // 3️⃣ Cuando eligen un módulo → cargar temas
+  selMod.onchange = () => {
+    trainerLoadTopicsForModule(s.id, selMod.value);
+  };
 
-  // 4) Cargar citados si ya hay fecha seleccionada
+  // 4️⃣ Cargar personas citadas (asistencia)
   await trainerLoadCitadosInto(s.id);
 }
- 
 
 
     setStatus(`<span class="ok">Sesiones cargadas.</span>`);
