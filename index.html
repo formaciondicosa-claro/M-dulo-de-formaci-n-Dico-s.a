@@ -2697,7 +2697,28 @@ async function trainerLoadSessions(){
         </div>
       `;
     }).join("");
+// ✅ Inicializar cada sesión renderizada
+for (const s of sessions) {
 
+  // 1) Cargar fechas reales (session_dates)
+  await trainerLoadDatesInto(s.id);
+
+  // 2) Cargar módulos disponibles
+  await trainerLoadModulesInto(s.id);
+
+  // 3) Evento: al cambiar módulo → cargar temas
+  const box = document.querySelector(`#sess_${CSS.escape(s.id)}`);
+  const selMod = box?.querySelector(".modSelect");
+
+  if (selMod) {
+    selMod.onchange = async () => {
+      await trainerLoadTopicsForModule(s.id, selMod.value);
+    };
+  }
+
+  // 4) Cargar citados si ya hay fecha seleccionada
+  await trainerLoadCitadosInto(s.id);
+}
  
 
 
