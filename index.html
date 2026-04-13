@@ -167,6 +167,21 @@ code{color:#fff;}
 /* ===== FORMADOR: ocultar panel izquierdo + 1 columna (SIN tocar JS) ===== */
 body.formador .grid{ grid-template-columns: 1fr !important; }
 body.formador #leftPanel{ display:none !important; }
+  /* ✅ ASISTENCIA MARCADA VISUALMENTE */
+.tr.asistio-si {
+  background: rgba(52, 211, 153, 0.15);
+  border-left: 5px solid #34d399;
+}
+
+.tr.asistio-no {
+  background: rgba(248, 113, 113, 0.15);
+  border-left: 5px solid #f87171;
+}
+
+.tr.asistio-tarde {
+  background: rgba(250, 204, 21, 0.18);
+  border-left: 5px solid #facc15;
+}
 </style>
 </head>
 
@@ -3115,7 +3130,30 @@ window.trainerMark = async (session_id, employee_id, session_date, asistio, tard
   session_id = (session_id ?? "").toString().trim();
   employee_id = (employee_id ?? "").toString().trim();
   session_date = (session_date ?? "").toString().trim();
+// ✅ MARCA VISUAL INMEDIATA (sin esperar al backend)
+const row = document
+  .querySelector(`button[onclick*="'${employee_id}'"]`)
+  ?.closest(".tr");
 
+if (row) {
+  // eliminar marcas anteriores
+  row.classList.remove("asistio-si", "asistio-no", "asistio-tarde");
+
+  // aplicar color según selección
+  if (asistio && !tarde) {
+    row.classList.add("asistio-si");        // VERDE
+  } else if (!asistio) {
+    row.classList.add("asistio-no");        // ROJO
+  } else if (asistio && tarde) {
+    row.classList.add("asistio-tarde");     // AMARILLO
+  }
+
+  // bloquear botones de ese empleado
+  row.querySelectorAll("button").forEach(b => {
+    b.disabled = true;
+    b.style.opacity = "0.6";
+  });
+}
   if(!session_id){
     setStatus(`<span class="err">Error:</span> session_id vacío. Recarga la sesión y vuelve a intentar.`);
     setLog({ error: "session_id vacío", session_id, employee_id, session_date, asistio, tarde });
@@ -3158,7 +3196,7 @@ setLog({ attendance_dates_upsert_payload: payload });
     if(error) throw error;
 
     setStatus(`<span class="ok">Asistencia guardada.</span>`);
-    await trainerLoadCitadosInto(session_id);
+    
 
   }catch(err){
     setStatus(`<span class="err">Error guardando asistencia:</span> ${esc(err.message || err)}`);
