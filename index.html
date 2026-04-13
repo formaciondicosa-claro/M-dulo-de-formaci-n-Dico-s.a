@@ -2738,16 +2738,14 @@ if(topic_ids.length === 0){
     setStatus("Guardando tema del día...");
 
     const { error } = await sb
-      .from("session_dates")
-      .update({
-  // Guardamos el texto con TODOS los temas seleccionados
-  tema_visto: topic_labels.join(" | "),
+      
+.from("session_dates")
+  .update({
+    // ✅ Guardar SOLO el texto del tema
+    tema_visto: topic_labels.join(" | ")
+  })
+  .eq("id", session_date_id);
 
-  // Y en topic_id dejamos el primero (solo para no romper tu lógica actual)
-  topic_id: topic_ids[0]
-})
-
-      .eq("id", session_date_id);
 
     if(error) throw error;
 
