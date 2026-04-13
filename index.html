@@ -2503,9 +2503,27 @@ const { error: insertError } = await sb
     session_date: hoy
   });
 
-if(insertError){
-  console.error(insertError);
-  alert("Error generando token");
+if (insertError) {
+  console.error("❌ Error insertando token:", insertError);
+
+  // Mensaje base
+  let msg = "Error generando token.";
+
+  // Errores típicos más claros
+  if (insertError.message) {
+    if (insertError.message.includes("row-level security")) {
+      msg = "❌ No tienes permisos para generar tokens (policy RLS).";
+    }
+    else if (insertError.message.includes("duplicate")) {
+      msg = "⚠️ Ya existe un token para esta sesión o evaluación.";
+    }
+    else {
+      // Mostrar mensaje real de Supabase (modo diagnóstico)
+      msg = `❌ ${insertError.message}`;
+    }
+  }
+
+  alert(msg);
   return;
 }
 if(error){
