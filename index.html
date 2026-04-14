@@ -2447,95 +2447,75 @@ async function trainerInit(){
   await trainerLoadSessions();
   await trainerLoadAbsenceAlerts();   // ✅ alertas primero
 }
-  async function generarTokenEvaluacion(session_id){
+  async function generarTokenEvaluacion(session_id) {
 
   const sb = getSB();
 
-  try{
+  try {
 
-    const { data: evaluaciones, error: errEval } = await sb
-  .from("evaluations")
-  .select("id,nombre");
+    // 1️⃣ Cargar evaluaciones
+    const { data: evaluaciones, error } = await sb
+      .from("evaluations")
+      .select("id,nombre");
 
-if(errEval){
-  alert("Error cargando evaluaciones");
-  console.error(errEval);
-  return;
-}
-
-if(!evaluaciones || evaluaciones.length === 0){
-  alert("No hay evaluaciones creadas");
-  return;
-}
-
-let lista = "Selecciona una evaluación:\n\n";
-
-evaluaciones.forEach((e, i) => {
-  lista += `${i+1}. ${e.nombre}\n`;
-});
-
-const opcion = prompt(lista);
-
-const index = parseInt(opcion) - 1;
-
-if(isNaN(index) || !evaluaciones[index]){
-  alert("Opción inválida");
-  return;
-}
-
-const evaluation_id = evaluaciones[index].id;
-
-    if(!evaluation_id){
-      alert("Debes ingresar una evaluación");
+    if (error || !evaluaciones || evaluaciones.length === 0) {
+      alert("No hay evaluaciones creadas");
       return;
     }
 
-    const token = Math.random().toString(36).substring(2,8).toUpperCase();
+    // 2️⃣ Mostrar listado
+    let lista = "Selecciona la evaluación:\n\n";
+    evaluaciones.forEach((e, i) => {
+      lista += `${i + 1}. ${e.nombre}\n`;
+    });
 
-   const hoy = new Date().toISOString().slice(0,10);
+    const opcion = prompt(lista);
+    const index = parseInt(opcion) - 1;
 
-const { error: insertError } = await sb
-  .from("evaluation_tokens")
-  .insert({
-    session_id: session_id,
-    evaluation_id: evaluation_id,
-    token: token,
-    session_date: hoy
-  });
-
-if (insertError) {
-  console.error("❌ Error insertando token:", insertError);
-
-  // Mensaje base
-  let msg = "Error generando token.";
-
-  // Errores típicos más claros
-  if (insertError.message) {
-    if (insertError.message.includes("row-level security")) {
-      msg = "❌ No tienes permisos para generar tokens (policy RLS).";
+    if (isNaN(index) || !evaluaciones[index]) {
+      alert("Opción inválida");
+      return;
     }
-    else if (insertError.message.includes("duplicate")) {
-      msg = "⚠️ Ya existe un token para esta sesión o evaluación.";
+
+    const evaluation_id = evaluaciones[index].id;
+
+    // 3️⃣ Generar token
+    const token = Math.random()
+      .toString(36)
+      .substring(2, 8)
+      .toUpperCase();
+
+    // 4️⃣ Expira en 15 minutos
+    const expiresAt = new Date(
+      Date.now() + 15 * 60 * 1000
+    ).toISOString();
+
+    // 5️⃣ Guardar en Supabase
+    const { error: insertError } = await sb
+      .from("evaluation_tokens")
+      .insert({
+        session_id: session_id,
+        evaluation_id: evaluation_id,
+        token: token,
+        expires_at: expiresAt
+      });
+
+    if (insertError) {
+      console.error(insertError);
+      alert("Error generando el token");
+      return;
     }
-    else {
-      // Mostrar mensaje real de Supabase (modo diagnóstico)
-      msg = `❌ ${insertError.message}`;
-    }
-  }
 
-  alert(msg);
-  return;
-}
-if(error){
-  console.error(error);
-  alert("Error generando token");
-}
+    // 6️⃣ Mostrar al formador
+    alert(
+      "✅ TOKEN GENERADO\n\n" +
+      "Token: " + token + "\n" +
+      "Válido por 15 minutos"
+    );
 
-    alert("Token generado: " + token);
-
-  }catch(e){
+  } catch (e) {
     console.error(e);
-    alert("Error generando token");
+    alert("Error inesperado generando token");
   }
 }
   
