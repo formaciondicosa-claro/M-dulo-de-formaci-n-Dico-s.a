@@ -2500,11 +2500,25 @@ async function trainerInit(){
         expires_at: expiresAt
       });
 
-    if (insertError) {
-      console.error(insertError);
-      alert("Error generando el token");
-      return;
-    }
+   if (insertError) {
+  console.error("❌ Error Supabase:", insertError);
+
+  // Mensaje por defecto
+  let msg = "Error generando el token.";
+
+  // Mostrar mensaje real si existe
+  if (insertError.message) {
+    msg += "\n\nDetalle:\n" + insertError.message;
+  }
+
+  // Mostrar código de error si existe
+  if (insertError.code) {
+    msg += "\nCódigo: " + insertError.code;
+  }
+
+  alert(msg);
+  return;
+}
 
     // 6️⃣ Mostrar al formador
     alert(
