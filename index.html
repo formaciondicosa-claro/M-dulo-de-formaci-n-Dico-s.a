@@ -2491,14 +2491,17 @@ async function trainerInit(){
     ).toISOString();
 
     // 5️⃣ Guardar en Supabase
-    const { error: insertError } = await sb
-      .from("evaluation_tokens")
-      .insert({
-        session_id: session_id,
-        evaluation_id: evaluation_id,
-        token: token,
-        expires_at: expiresAt
-      });
+   const hoy = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
+const { error: insertError } = await sb
+  .from("evaluation_tokens")
+  .insert({
+    session_id: session_id,
+    evaluation_id: evaluation_id,
+    token: token,
+    expires_at: expiresAt,
+    session_date: hoy
+  });
 
    if (insertError) {
   console.error("❌ Error Supabase:", insertError);
