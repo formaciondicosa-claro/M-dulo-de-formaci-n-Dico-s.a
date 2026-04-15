@@ -693,11 +693,11 @@ async function loadSessions(){
     .order("fecha", { ascending:false })
     .limit(300);
 if (STATE.dashboardMode === "operativo") {
-  // Operativo: solo abiertas
+  // Operativo: sesiones abiertas
   q = q.in("estado", ["programada", "en_curso"]);
 } else {
-  // Histórico: mostrar TODO por ahora
-  // (hasta que existan cerradas reales)
+  // Histórico: SOLO cerradas
+  q = q.eq("estado", "cerrada");
 }
   if(training_id) q = q.eq("training_id", training_id);
   if(formador) q = q.eq("formador_user_id", formador);
