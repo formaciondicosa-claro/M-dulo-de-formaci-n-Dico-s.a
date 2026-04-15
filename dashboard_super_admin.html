@@ -209,14 +209,22 @@ code{color:#fff;}
         <div class="small" id="whoami">—</div>
       </div>
       <div class="pillrow">
-        <span class="badge" id="roleBadge">rol</span>
-        <span class="pill" id="pillStatus">Listo</span>
+  <span class="badge" id="roleBadge">rol</span>
+  <span class="pill" id="pillStatus">Listo</span>
 
-        <button id="btnBack" class="btnMini btnGhost" type="button">Volver a Asignación</button>
-        <button id="btnReload" class="btnMini btnGhost" type="button">Actualizar</button>
-        <button id="btnLogout" class="btnMini btnDanger" type="button">Cerrar sesión</button>
-      </div>
-    </div>
+  <div class="row" style="gap:6px;">
+    <button id="btnModeOperativo" class="btnMini btnGhost" type="button">
+      Operativo
+    </button>
+    <button id="btnModeHistorico" class="btnMini btnGhost" type="button">
+      Histórico
+    </button>
+  </div>
+
+  <button id="btnBack" class="btnMini btnGhost" type="button">Volver a Asignación</button>
+  <button id="btnReload" class="btnMini btnGhost" type="button">Actualizar</button>
+  <button id="btnLogout" class="btnMini btnDanger" type="button">Cerrar sesión</button>
+</div>
 
     <div class="grid">
       <!-- LEFT -->
@@ -490,6 +498,7 @@ let STATE = {
   citations:[],
   attendanceByDate: new Map(),
   temaByDate: new Map(),
+  dashboardMode: "historico", // "operativo" | "historico"
 };
 let EXITS_REPORT_ROWS = []; // guarda filas del reporte para exportar
 
