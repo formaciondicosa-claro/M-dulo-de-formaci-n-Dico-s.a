@@ -480,20 +480,9 @@ function setDashboardMode(mode){
 
   // el primer panel es el de la izquierda (Sesiones)
   const leftPanel = panels[0];
-
-  if(mode === "operativo"){
-    // ocultar panel izquierdo
-    leftPanel.classList.add("hidden");
-
-    // una sola columna
-    grid.style.gridTemplateColumns = "1fr";
-  } else {
-    // mostrar panel izquierdo
-    leftPanel.classList.remove("hidden");
-
-    // dos columnas: panel + contenido
-    grid.style.gridTemplateColumns = "420px 1fr";
-  }
+// ✅ En ambos modos se muestran las sesiones (panel izquierdo)
+leftPanel.classList.remove("hidden");
+grid.style.gridTemplateColumns = "420px 1fr"; 
 
   // dejar deshabilitado el botón del modo activo
   document.getElementById("btnModeOperativo").disabled = (mode === "operativo");
