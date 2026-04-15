@@ -607,6 +607,8 @@ async function boot(){
   $("btnLogout").onclick = doLogout;
   $("btnReload").onclick = initData;
   $("btnBack").onclick = () => { window.location.href = "index.html"; };
+  $("btnModeOperativo").onclick = () => setDashboardMode("operativo");
+$("btnModeHistorico").onclick = () => setDashboardMode("historico");
 
   $("btnApply").onclick = loadSessions;
   $("btnClear").onclick = clearFilters;
