@@ -760,7 +760,10 @@ function renderSessionsList(){
     const trName = s.trainings?.nombre || "(sin nombre)";
     const trainerName = STATE.trainers.find(t => t.user_id === s.formador_user_id)?.nombre || "(sin formador)";
     const isSel = (STATE.selectedSessionId === s.id);
-
+    // ✅ En modo Operativo, siempre mostrar sesiones abiertas
+if (STATE.dashboardMode === "operativo" && s.estado !== "cerrada") {
+  // no hacemos nada, se muestra normalmente
+}
     return `
       <div class="item" style="${isSel ? "border-color: rgba(52,211,153,.6)" : ""}">
         <div class="row" style="justify-content:space-between;">
