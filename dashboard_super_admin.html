@@ -293,8 +293,8 @@ code{color:#fff;}
   <div class="small">
     Personas con <b>3 o más días consecutivos</b> sin asistencia en sesiones multidiarias.
   </div>
+<div class="tablelike hidden" style="margin-top:10px;" id="absenceAlerts">
 
-  <div class="tablelike" style="margin-top:10px;" id="absenceAlerts">
     <div class="tr th">
       <div>Empleado</div>
       <div>Documento</div>
@@ -629,6 +629,7 @@ $("btnExCsv").onclick = exportExitsCsv;
   $("btnHistLimpiar").onclick = limpiarHistorialColaborador;
 
   await initData();
+  setDashboardMode(STATE.dashboardMode);
 }
 
 /* =======================
