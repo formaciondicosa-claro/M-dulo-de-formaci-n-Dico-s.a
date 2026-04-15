@@ -779,6 +779,15 @@ function renderSessionsList(){
       </div>
     `;
   }).join("");
+  // ✅ Si estamos en Operativo y aún no hay una sesión abierta,
+// abrir automáticamente la primera sesión disponible
+if (
+  STATE.dashboardMode === "operativo" &&
+  STATE.sessions.length > 0 &&
+  !STATE.selectedSessionId
+) {
+  selectSession(STATE.sessions[0].id);
+}
 }
   async function loadAbsenceAlerts(){
   const sb = getSB();
