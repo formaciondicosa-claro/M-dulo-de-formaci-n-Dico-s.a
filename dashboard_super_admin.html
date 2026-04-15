@@ -498,6 +498,8 @@ function setDashboardMode(mode){
   // dejar deshabilitado el botón del modo activo
   document.getElementById("btnModeOperativo").disabled = (mode === "operativo");
   document.getElementById("btnModeHistorico").disabled = (mode === "historico");
+  $("fState").value = "";
+  loadSessions();
 }
 
 
@@ -701,7 +703,13 @@ async function loadSessions(){
     .select("id,training_id,fecha,ciudad,formador_user_id,estado, trainings(nombre)")
     .order("fecha", { ascending:false })
     .limit(300);
-  q = q.neq("estado", "cerrada"); // ✅ no mostrar cerradas
+if (STATE.dashboardMode === "operativo") {
+  // Operativo: mostrar NO cerradas
+  q = q.neq("estado", "cerrada");
+} else {
+  // Histórico: SOLO cerradas
+  q = q.eq("estado", "cerrada");
+}
   if(training_id) q = q.eq("training_id", training_id);
   if(formador) q = q.eq("formador_user_id", formador);
   if(estado) q = q.eq("estado", estado);
