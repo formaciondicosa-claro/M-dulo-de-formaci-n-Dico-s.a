@@ -712,7 +712,9 @@ if (STATE.dashboardMode === "operativo") {
 }
   if(training_id) q = q.eq("training_id", training_id);
   if(formador) q = q.eq("formador_user_id", formador);
-  if(estado) q = q.eq("estado", estado);
+  if (estado && STATE.dashboardMode === "operativo") {
+  q = q.eq("estado", estado);
+}
   if(from) q = q.gte("fecha", from);
   if(to) q = q.lte("fecha", to);
 
