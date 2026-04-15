@@ -1018,7 +1018,9 @@ async function loadAttendanceForAllDates(session_id){
 
 
 function getTemaForFecha(fecha){
-  return (STATE.temaByDate.get(fecha) || "").toString();
+  const d = STATE.sessionDates.find(x => x.fecha === fecha);
+  if (d?.tema_visto) return d.tema_visto;
+  return STATE.temaByDate.get(fecha) || "";
 }
 // ✅ Trae mapas de ENTREGADO y RETIRADO para esta sesión
 async function loadExitAndRetiroMaps(session_id){
