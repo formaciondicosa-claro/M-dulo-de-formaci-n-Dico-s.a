@@ -1378,14 +1378,19 @@ let evalTxt = "—";
 let evalClass = "small";
 
 if (ev) {
-  if (ev.estado === "aprobado") {
-    evalTxt = `APROBADO (${ev.percent}%)`;
-    evalClass = "ok";
-  } else {
-    evalTxt = `NO APROBADO (${ev.percent}%)`;
-    evalClass = "err";
+  const pct = Number(ev.percent);
+
+  if (!isNaN(pct)) {
+    if (pct >= 80) {
+      evalTxt = `APROBADO (${pct}%)`;
+      evalClass = "ok";
+    } else {
+      evalTxt = `NO APROBADO (${pct}%)`;
+      evalClass = "err";
+    }
   }
 }
+
     const emp = c.employees || {};
     const rec = map.get(c.employee_id) || null;
 
