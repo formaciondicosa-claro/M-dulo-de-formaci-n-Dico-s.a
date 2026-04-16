@@ -154,10 +154,20 @@ code{color:#fff;}
 
 #detailTable .tr{
   display:grid !important;
-  grid-template-columns: 1fr 160px 120px 1fr 110px 140px !important;
+  grid-template-columns:
+    1fr        /* Empleado */
+    160px      /* Documento */
+    120px      /* Asistió */
+    1fr        /* Obs. */
+    110px      /* Incap. */
+    140px      /* Regresa */
+    180px      /* Evaluación final */
+  !important;
+
   gap:10px;
   align-items:center;
 }
+
 
 #detailTable .tr > div{ min-width:0; overflow-wrap:break-word; word-break:break-word; }
 
@@ -1213,21 +1223,37 @@ const pct = citedEff ? (yes / citedEff) * 100 : 0;
 function renderDetailEmpty(){
   $("temaDiaBox").innerHTML = "";
   const dt = $("detailTable");
-  dt.innerHTML = `
-    <div class="tr th">
-      <div>Empleado</div><div>Documento</div><div>Asistió</div><div>Obs.</div>
-    </div>
-    <div class="tr">
-      <div class="small"><span class="warn">Selecciona una fecha arriba para ver el detalle.</span></div>
-      <div></div><div></div><div></div>
-    </div>
-  `;
+ dt.innerHTML = `
+  <div class="tr th">
+    <div>Empleado</div>
+    <div>Documento</div>
+    <div>Asistió</div>
+    <div>Obs.</div>
+    <div>Incap.</div>
+    <div>Regresa</div>
+    <div>Evaluación final</div>
+  </div>
+`;
 }
 
 async function renderDetailForSelectedDate(){
   const sb = getSB();
 
   const fecha = $("datePick").value || "";
+  // ✅ Cargar evaluaciones finales de la sesión
+const { data: evRows, error: eEv } = await sb
+  .from("evaluation_results")
+  .select("employee_id, percent, estado")
+  .eq("session_id", STATE.selectedSessionId);
+
+if (eEv) {
+  console.error("Error cargando evaluaciones:", eEv);
+}
+
+// Map: employee_id -> evaluación
+const evalMap = new Map(
+  (evRows || []).map(r => [r.employee_id, r])
+);
   if(!fecha){
     renderDetailEmpty();
     return;
@@ -1244,11 +1270,18 @@ async function renderDetailForSelectedDate(){
   const dt = $("detailTable");
 
   // ✅ header 6 columnas
-  dt.innerHTML = `
-    <div class="tr th">
-      <div>Empleado</div><div>Documento</div><div>Asistió</div><div>Obs.</div><div>Incap.</div><div>Regresa</div>
-    </div>
-  `;
+ dt.innerHTML = `
+  <div class="tr th">
+    <div>Empleado</div>
+    <div>Documento</div>
+    <div>Asistió</div>
+    <div>Obs.</div>
+    <div>Incap.</div>
+    <div>Regresa</div>
+    <div>Evaluación final</div>
+  </div>
+`;
+
 
   if(!cited.length){
     dt.innerHTML += `
@@ -1338,6 +1371,21 @@ async function renderDetailForSelectedDate(){
   });
 
   for(const c of sorted){
+    // ✅ Evaluación final del colaborador
+const ev = evalMap.get(c.employee_id) || null;
+
+let evalTxt = "—";
+let evalClass = "small";
+
+if (ev) {
+  if (ev.estado === "aprobado") {
+    evalTxt = `APROBADO (${ev.percent}%)`;
+    evalClass = "ok";
+  } else {
+    evalTxt = `NO APROBADO (${ev.percent}%)`;
+    evalClass = "err";
+  }
+}
     const emp = c.employees || {};
     const rec = map.get(c.employee_id) || null;
 
