@@ -182,6 +182,10 @@ body.formador #leftPanel{ display:none !important; }
   background: rgba(250, 204, 21, 0.18);
   border-left: 5px solid #facc15;
 }
+  /* OCULTAR ALERTAS DE ABANDONO SOLO PARA FORMADOR */
+body.formador #absenceAlertsTrainer {
+  display: none !important;
+}
 </style>
 </head>
 
@@ -3206,11 +3210,6 @@ if (row) {
     row.classList.add("asistio-tarde");     // AMARILLO
   }
 
-  // bloquear botones de ese empleado
-  row.querySelectorAll("button").forEach(b => {
-    b.disabled = true;
-    b.style.opacity = "0.6";
-  });
 }
   if(!session_id){
     setStatus(`<span class="err">Error:</span> session_id vacío. Recarga la sesión y vuelve a intentar.`);
