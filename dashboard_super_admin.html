@@ -1433,15 +1433,22 @@ if(retiroFecha){
 
 
     dt.innerHTML += `
-      <div class="tr">
-        <div>${esc(emp.nombre || "")}</div>
-        <div>${esc(emp.documento || "")}</div>
-       <div class="${asistClass}">${esc(asistioTxtFinal)}</div>
-        <div class="small">${esc(obsTxt)}</div>
-        <div class="${tieneIncap ? "warn" : "small"}">${tieneIncap ? `INCAP. ${esc(incHasta)}` : "—"}</div>
-        <div class="${tieneIncap ? "ok" : "small"}">${tieneIncap ? esc(regresa) : "—"}</div>
-      </div>
-    `;
+  <div class="tr">
+    <div>${esc(emp.nombre || "")}</div>
+    <div>${esc(emp.documento || "")}</div>
+    <div class="${asistClass}">${esc(asistioTxtFinal)}</div>
+    <div class="small">${esc(obsTxt)}</div>
+    <div class="${tieneIncap ? "warn" : "small"}">
+      ${tieneIncap ? `INCAP. ${esc(incHasta)}` : "—"}
+    </div>
+    <div class="${tieneIncap ? "ok" : "small"}">
+      ${tieneIncap ? esc(regresa) : "—"}
+    </div>
+
+    <!-- ✅ ESTA ES LA LÍNEA QUE FALTABA -->
+    <div class="${evalClass}">${evalTxt}</div>
+  </div>
+`;
   }
 }
 
