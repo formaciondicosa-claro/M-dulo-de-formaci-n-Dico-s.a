@@ -305,7 +305,7 @@
   const SUPABASE_URL = "https://bqlltjronzrlgbjjntes.supabase.co";
   const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_j84bjNzsEw1O-zsvliQ4Wg_BhGkSqR_"; // debe estar COMPLETA
   
-  const EMP_HEADERS = ["documento","nombre","cargo","area","supervisor","email","estado"];
+  const EMP_HEADERS = ["documento","nombre","cargo","area","supervisor","email","estado","empresa"];
   const CITE_HEADERS = ["session_id","documento"]; // para carga masiva
   const CERT_HEADERS = ["documento","certificacion","fecha_teorica","fecha_practica"];
   
@@ -1810,15 +1810,15 @@
       const dataRows = rows.slice(1).filter(r => r.some(c => val(c) !== ""));
       if(!dataRows.length) throw new Error("No hay filas de datos.");
   
-      // 1) construir y NORMALIZAR
-      const raw = dataRows.map(r => ({
-        documento: normDoc(r[idx.documento]),
-        nombre: val(r[idx.nombre]),
-        cargo: val(r[idx.cargo]),
-        area: val(r[idx.area]),
-        supervisor: val(r[idx.supervisor]),
-        email: normEmail(r[idx.email]),
-        estado: val(r[idx.estado]) || "activo"
+     const raw = dataRows.map(r => ({
+  documento: normDoc(r[idx.documento]),
+  nombre: val(r[idx.nombre]),
+  cargo: val(r[idx.cargo]),
+  area: val(r[idx.area]),
+  supervisor: val(r[idx.supervisor]),
+  email: normEmail(r[idx.email]),
+  estado: val(r[idx.estado]) || "activo",
+  empresa: val(r[idx.empresa]) || "DICO"
       })).filter(x => x.documento && x.nombre);
   
       if(!raw.length) throw new Error("No hay registros válidos (requiere documento y nombre).");
@@ -2718,13 +2718,7 @@
   <div style="margin-top:10px;">
     
   </div>
-  
-            <div class="actions" style="margin-top:10px;">
-              <button class="btnMini btnGhost" type="button"
-                onclick="trainerExportSessionCSV('${s.id}')">
-                Exportar asistencia (CSV)
-              </button>
-            </div>
+  </div>
   <div class="actions" style="margin-top:10px;">
     <button class="btnMini btnGhost" type="button"
       onclick="trainerExportSessionCSV('${s.id}')">
@@ -2955,10 +2949,10 @@
     try{
       // 1) Citados
       const { data: cit, error } = await sb
-        .from("citations")
-        .select(`employee_id, employees ( id, documento, nombre )`)
-        .eq("session_id", session_id)
-        .order("created_at", { ascending:true });
+  .from("citations")
+  .select(`employee_id, employees ( id, documento, nombre, empresa )`)
+  .eq("session_id", session_id)
+  .order("created_at", { ascending: true });
   
       if(error) throw error;
   
@@ -3082,6 +3076,15 @@
   
   
     const name = emp?.nombre ? `${emp.nombre} (${emp.documento || ""})` : (c.employee_id || "");
+    const empresa = emp?.empresa || "DICO";
+
+const empresaBadge = empresa === "DICO"
+  ? `<div class="small" style="margin-top:2px;color:#8b8cff">
+       🟦 DICO
+     </div>`
+  : `<div class="small" style="margin-top:2px;color:#f59e0b">
+       🟧 CONTRATISTA · ${empresa}
+     </div>`;
   
     // ✅ asistencia del día seleccionado
     const rec = attMap.get(c.employee_id) || null;
@@ -3106,8 +3109,8 @@
       <!-- Columna EMPLEADO -->
       <div>
         <div class="small">
-          ${esc(name)}
-  
+  ${esc(name)}
+  ${empresaBadge}  
           <div class="small" style="margin-top:4px;opacity:.9;">
             <span class="${apto ? "ok":"warn"}">${esc(prog)}</span>
             ${late ? `<span class="warn"> · TARDE</span>` : ``}
@@ -3536,7 +3539,7 @@
       // 3) Citados + employees
       const { data: cit, error: e2 } = await sb
         .from("citations")
-        .select(`employee_id, employees ( documento, nombre )`)
+.select(`employee_id, employees ( id, documento, nombre, empresa )`)
         .eq("session_id", session_id);
       if(e2) throw e2;
   
@@ -3600,11 +3603,8 @@
   );
   
       // CSV
-      const headers = [
-        "sesion_id","entrenamiento","ciudad","fecha_inicio_sesion",
-        "session_date","documento","nombre","asistio","tema"
-      ];
-  
+      const headers = ["sesion_id","entrenamiento","ciudad","fecha_inicio_sesion","session_date","documento","nombre","empresa","asistio","tema"];
+        
       const lines = [];
       lines.push(headers.join(","));
   
@@ -3636,17 +3636,18 @@
   
   
           const row = [
-            session_id,
-            `"${entrenamiento.replaceAll('"','""')}"`,
-            `"${ciudad.replaceAll('"','""')}"`,
-            fecha_inicio,
-            f,
-            `"${doc}"`,
-            `"${nom}"`,
-            asistio,
-            `"${tema}"`
-          ];
-          lines.push(row.join(","));
+  session_id,
+  `"${entrenamiento.replaceAll('"','""')}"`,
+  `"${ciudad.replaceAll('"','""')}"`,
+  fecha_inicio,
+  f,
+  `"${doc}"`,
+  `"${nom}"`,
+  `"${(emp.empresa || "DICO").replaceAll('"','""')}"`,
+  asistio,
+  `"${tema}"`
+];
+  lines.push(row.join(","));
         }
       }
   
