@@ -155,19 +155,17 @@ code{color:#fff;}
 #detailTable .tr{
   display:grid !important;
   grid-template-columns:
-    1fr        /* Empleado */
-    160px      /* Documento */
-    120px      /* Asistió */
-    1fr        /* Obs. */
-    110px      /* Incap. */
-    140px      /* Regresa */
-    180px      /* Evaluación final */
-  !important;
-
+    1fr
+    140px
+    120px
+    120px
+    1fr
+    110px
+    140px
+    180px;
   gap:10px;
   align-items:center;
 }
-
 
 #detailTable .tr > div{ min-width:0; overflow-wrap:break-word; word-break:break-word; }
 
@@ -910,9 +908,10 @@ if(empIds.length){
       if(asistio !== true && !incMap.get(c.employee_id)){
         cont.innerHTML += `
           <div class="tr">
-            <div>${emp.nombre || ""}</div>
-            <div>${emp.documento || ""}</div>
-            <div>${fecha}</div>
+            <div>${emp.nombre}</div>
+<div>${emp.documento}</div>
+<div>${emp.empresa || 'DICO'}</div>
+<div>${fecha}</div>
           </div>
         `;
       }
@@ -991,17 +990,18 @@ async function loadCitations(session_id){
   const sb = getSB();
 
   const { data, error } = await sb
-    .from("citations")
-    .select(`
-      employee_id,
-      employees!citations_employee_id_fkey (
-        documento,
-        nombre,
-        cargo,
-        area,
-        estado
-      )
-    `)
+   .from("citations")
+.select(`
+  employee_id,
+  employees!citations_employee_id_fkey (
+    documento,
+    nombre,
+    cargo,
+    area,
+    estado,
+    empresa
+  )
+`)
     .eq("session_id", session_id);
 
   if(error) throw error;
@@ -1227,6 +1227,7 @@ function renderDetailEmpty(){
   <div class="tr th">
     <div>Empleado</div>
     <div>Documento</div>
+    <div>Empresa</div>
     <div>Asistió</div>
     <div>Obs.</div>
     <div>Incap.</div>
@@ -1274,6 +1275,7 @@ const evalMap = new Map(
   <div class="tr th">
     <div>Empleado</div>
     <div>Documento</div>
+    <div>Empresa</div>
     <div>Asistió</div>
     <div>Obs.</div>
     <div>Incap.</div>
@@ -1441,6 +1443,9 @@ if(retiroFecha){
   <div class="tr">
     <div>${esc(emp.nombre || "")}</div>
     <div>${esc(emp.documento || "")}</div>
+    <div class="${(emp.empresa === 'DICO') ? 'info' : 'warn'}">
+      ${esc(emp.empresa || 'DICO')}
+    </div>
     <div class="${asistClass}">${esc(asistioTxtFinal)}</div>
     <div class="small">${esc(obsTxt)}</div>
     <div class="${tieneIncap ? "warn" : "small"}">
