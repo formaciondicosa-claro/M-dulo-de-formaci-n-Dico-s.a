@@ -678,57 +678,67 @@ async function loadFormacionInicialPorEmpresa(){
     </div>
   `;
 
-  // 1️⃣ Personas citadas en sesiones ACTIVAS de Formación Inicial
-  const { data, error } = await sb
-    .from("citations")
-    .select(`
-      employee_id,
-      employees ( empresa ),
-      sessions!citations_session_id_fkey (
-        id,
-        estado,
-        trainings ( nombre )
-      )
-    `)
-    .in("sessions.estado", ["programada", "en_curso"])
-    .eq("sessions.trainings.nombre", "Formación Inicial");
+  // ✅ 1. TOMAR SOLO LAS SESIONES ABIERTAS QUE YA ESTÁN EN PANTALLA
+  const sesionesFI = STATE.sessions.filter(s =>
+    s.trainings?.nombre === "Formación Inicial" &&
+    (s.estado === "programada" || s.estado === "en_curso")
+  );
 
-  if (!data || error) {
+  if (sesionesFI.length === 0) {
     cont.innerHTML = `
       <div class="tr">
-        <div>Sin personal en capacitación</div>
+        <div>Sin personal en formación inicial</div>
         <div>0</div>
       </div>
     `;
     return;
   }
 
-  const empIds = [...new Set(data.map(x => x.employee_id))];
+  const sessionIds = sesionesFI.map(s => s.id);
 
-  // 2️⃣ Quitar ENTREGADOS
+  // ✅ 2. TRAER SOLO LOS CITADOS DE ESAS SESIONES
+  const { data: citados, error } = await sb
+    .from("citations")
+    .select(`
+      employee_id,
+      employees ( empresa )
+    `)
+    .in("session_id", sessionIds);
+
+  if (error || !citados) {
+    cont.innerHTML = `
+      <div class="tr">
+        <div>Error cargando datos</div>
+        <div>—</div>
+      </div>
+    `;
+    return;
+  }
+
+  // ✅ 3. QUITAR ENTREGADOS Y RETIRADOS
+  const empIds = [...new Set(citados.map(c => c.employee_id))];
+
   const { data: exits } = await sb
     .from("session_exits")
     .select("employee_id")
     .in("employee_id", empIds);
 
-  const exitSet = new Set((exits || []).map(x => x.employee_id));
-
-  // 3️⃣ Quitar RETIRADOS
   const { data: retiros } = await sb
     .from("session_withdrawals")
     .select("employee_id")
     .in("employee_id", empIds);
 
-  const retiroSet = new Set((retiros || []).map(x => x.employee_id));
+  const exitSet = new Set((exits || []).map(e => e.employee_id));
+  const retiroSet = new Set((retiros || []).map(r => r.employee_id));
 
-  // 4️⃣ Conteo FINAL por empresa
+  // ✅ 4. CONTEO FINAL POR EMPRESA
   const conteo = new Map();
 
-  for (const r of data) {
-    if (exitSet.has(r.employee_id)) continue;
-    if (retiroSet.has(r.employee_id)) continue;
+  for (const c of citados) {
+    if (exitSet.has(c.employee_id)) continue;
+    if (retiroSet.has(c.employee_id)) continue;
 
-    const empresa = r.employees?.empresa || "DICO";
+    const empresa = c.employees?.empresa || "DICO";
     conteo.set(empresa, (conteo.get(empresa) || 0) + 1);
   }
 
@@ -747,12 +757,11 @@ async function loadFormacionInicialPorEmpresa(){
 
   cont.innerHTML += `
     <div class="tr th" style="grid-template-columns:1fr 120px">
-      <div>TOTAL EN CAPACITACIÓN</div>
+      <div>TOTAL EN FORMACIÓN INICIAL</div>
       <div><b>${total}</b></div>
     </div>
   `;
 }
-  
 async function initData(){
   setPill("Cargando…", "info");
   await Promise.all([ loadTrainings(), loadTrainers() ]);
