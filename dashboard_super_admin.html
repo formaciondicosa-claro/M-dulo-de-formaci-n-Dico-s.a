@@ -304,8 +304,27 @@ code{color:#fff;}
 
      <!-- RIGHT -->
 <div class="panel">
-  
+ 
+<div id="formacionInicialBox" class="hidden">
 
+  <h3>📊 Formación Inicial – Personal activo</h3>
+  <div class="small">
+    Personal actualmente en <b>Formación Inicial</b>, agrupado por empresa.
+  </div>
+
+  <div class="tablelike" style="margin-top:10px;">
+    <div class="tr th" style="grid-template-columns: 1fr 120px;">
+      <div>Empresa</div>
+      <div>Total</div>
+    </div>
+
+
+    <div id="formacionInicialTable"></div>
+  </div>
+
+  <hr/>
+</div>
+  
   <h3>⚠️ Alertas de abandono</h3>
   <div class="small">
     Personas con <b>3 o más días consecutivos</b> sin asistencia en sesiones multidiarias.
@@ -489,22 +508,31 @@ function downloadTextFile(content, filename, mime){
 function setDashboardMode(mode){
   STATE.dashboardMode = mode;
 
-  // buscamos el grid principal
   const grid = document.querySelector(".grid");
-
-  // buscamos los paneles dentro del grid
   const panels = document.querySelectorAll(".grid > .panel");
-
-  // el primer panel es el de la izquierda (Sesiones)
   const leftPanel = panels[0];
-// ✅ En ambos modos se muestran las sesiones (panel izquierdo)
-leftPanel.classList.remove("hidden");
-grid.style.gridTemplateColumns = "420px 1fr"; 
 
-  // dejar deshabilitado el botón del modo activo
+  const fiBox = document.getElementById("formacionInicialBox");
+
+  if (mode === "operativo") {
+    // 🔵 Operativo
+    leftPanel.classList.add("hidden");     // ❌ ocultar filtros
+    grid.style.gridTemplateColumns = "1fr"; // ✅ ocupar todo
+
+    fiBox.classList.remove("hidden");      // ✅ mostrar resumen
+    loadFormacionInicialPorEmpresa();      // ✅ cargar datos
+  } 
+  else {
+    // 🟣 Histórico
+    leftPanel.classList.remove("hidden");  // ✅ mostrar filtros
+    grid.style.gridTemplateColumns = "420px 1fr";
+
+    fiBox.classList.add("hidden");         // ❌ ocultar resumen
+  }
+
   document.getElementById("btnModeOperativo").disabled = (mode === "operativo");
   document.getElementById("btnModeHistorico").disabled = (mode === "historico");
-  $("fState").value = "";
+
   loadSessions();
 }
 
@@ -643,6 +671,74 @@ $("btnExCsv").onclick = exportExitsCsv;
 /* =======================
    DATA LOADERS
 ======================= */
+async function loadFormacionInicialPorEmpresa(){
+  const sb = getSB();
+  const cont = document.getElementById("formacionInicialTable");
+
+  if (!cont) return;
+
+  cont.innerHTML = `
+    <div class="tr small">
+      <div>Cargando...</div>
+      <div></div>
+    </div>
+  `;
+
+  const { data, error } = await sb
+    .from("citations")
+    .select(`
+      employee_id,
+      employees ( empresa ),
+      sessions!citations_session_id_fkey (
+        estado,
+        trainings ( nombre )
+      )
+    `)
+    .in("sessions.estado", ["programada", "en_curso"])
+    .eq("sessions.trainings.nombre", "Formación Inicial");
+
+  if (error) {
+    cont.innerHTML = `
+      <div class="tr err">
+        <div>Error cargando datos</div>
+        <div>—</div>
+      </div>
+    `;
+    return;
+  }
+
+  const conteo = new Map();
+
+  for (const r of data || []) {
+    const empresa = r.employees?.empresa || "DICO";
+    conteo.set(empresa, (conteo.get(empresa) || 0) + 1);
+  }
+
+  if (conteo.size === 0) {
+    cont.innerHTML = `
+      <div class="tr">
+        <div class="small">Sin personal en formación inicial</div>
+        <div>0</div>
+      </div>
+    `;
+    return;
+  }
+
+  cont.innerHTML = "";
+
+  for (const [empresa, total] of conteo.entries()) {
+    cont.innerHTML += `
+      <div class="tr" style="grid-template-columns: 1fr 120px;">
+        <div class="${empresa === "DICO" ? "info" : "warn"}">
+          ${empresa}
+        </div>
+        <div><b>${total}</b></div>
+      </div>
+    `;
+  }
+}
+
+  
 async function initData(){
   setPill("Cargando…", "info");
   await Promise.all([ loadTrainings(), loadTrainers() ]);
