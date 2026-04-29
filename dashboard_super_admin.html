@@ -518,8 +518,7 @@ function setDashboardMode(mode){
     // 🔵 Operativo
    
     fiBox.classList.remove("hidden");      // ✅ mostrar resumen
-    loadFormacionInicialPorEmpresa();      // ✅ cargar datos
-  } 
+    } 
   else {
    
 
@@ -678,18 +677,19 @@ async function loadFormacionInicialPorEmpresa(){
     </div>
   `;
 
-  // ✅ 1. TOMAR SOLO LAS SESIONES ABIERTAS QUE YA ESTÁN EN PANTALLA
-  const sesionesFI = STATE.sessions.filter(s =>
-    s.trainings?.nombre === "Formación Inicial" &&
-    (s.estado === "programada" || s.estado === "en_curso")
-  );
+ // ✅ 1. TRAER TODAS LAS SESIONES ACTIVAS DE FORMACION INICIAL
+const { data: sesionesFI, error: eSes } = await sb
+  .from("sessions")
+  .select("id, trainings!inner(nombre)")
+  .in("estado", ["programada", "en_curso"])
+  .eq("trainings.nombre", "Formación Inicial");
 
-  if (sesionesFI.length === 0) {
-    cont.innerHTML = `
-      <div class="tr">
-        <div>Sin personal en formación inicial</div>
-        <div>0</div>
-      </div>
+if (eSes || !sesionesFI || sesionesFI.length === 0) {
+  cont.innerHTML = `
+    <div class="tr">
+      <div>Sin personal en formación inicial</div>
+      <div>0</div>
+    </div>
     `;
     return;
   }
@@ -869,6 +869,9 @@ if (STATE.dashboardMode === "operativo") {
 
   STATE.sessions = sessions;
   renderSessionsList();
+if (STATE.dashboardMode === "operativo") {
+  loadFormacionInicialPorEmpresa();
+}
   setPill("Listo", "ok");
 }
 
