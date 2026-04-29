@@ -2373,7 +2373,7 @@
       warn.style.border = "1px solid rgba(250,204,21,.35)";
       warn.style.borderRadius = "12px";
       warn.style.background = "rgba(250,204,21,.08)";
-      box.insertBefore(warn, box.querySelector(".tablelike"));
+      box.insertBefore(warn, box.querySelector(".tablelike") || null);
     }
   
     if(locked){
@@ -2690,60 +2690,49 @@ if (!selTopic) return;
       cont.innerHTML = sessions.map(s => {
         const trName = s.trainings?.nombre || "Entrenamiento";
         return `
-          <div class="item" id="sess_${s.id}">
-            <b>${esc(trName)}</b>
-            <div class="small">Sesión · ${esc(s.fecha)} · ${esc(s.ciudad || "")}</div>
-  
-            <label>Fecha</label>
-            <select class="dateSelect"></select>
-  
-            <hr/>
-  
-            <label>Módulo (para esta fecha)</label>
-  <select class="modSelect">
-    <option value="">-- Selecciona módulo --</option>
-  </select>
-  
-  <label>Tema (para esta fecha) — puedes seleccionar varios (Ctrl + click)</label>
-  <select class="topicSelect" multiple size="6" disabled></select>
-  
-  <div class="small" style="margin-top:6px;opacity:.9;">
-    Para seleccionar varios: mantén presionado <b>Ctrl</b> y haz clic en cada tema.
-  </div>
-  
-  
-  <button class="btnMini btnGhost" type="button"
-    onclick="trainerSaveTema('${s.id}')">
-    Guardar tema
-  </button>
-  
-  
-  <div class="small" style="margin-top:6px;opacity:.9;">
-    (Se guarda en <code>session_dates</code> solo para la fecha seleccionada)
-  </div>
-  
-  <div style="margin-top:10px;">
-    
-  </div>
-  </div>
-  <div class="actions" style="margin-top:10px;">
-    <button class="btnMini btnGhost" type="button"
-      onclick="trainerExportSessionCSV('${s.id}')">
-      Exportar asistencia (CSV)
+  <div class="item" id="sess_${s.id}">
+
+    <b>${esc(trName)}</b>
+    <div class="small">Sesión · ${esc(s.fecha)} · ${esc(s.ciudad || "")}</div>
+
+    <label>Fecha</label>
+    <select class="dateSelect"></select>
+
+    <hr/>
+
+    <label>Módulo</label>
+    <select class="modSelect"></select>
+
+    <label>Tema</label>
+    <select class="topicSelect" multiple disabled></select>
+
+    <button class="btnMini btnGhost" onclick="trainerSaveTema('${s.id}')">
+      Guardar tema
     </button>
-  
-    <button class="btnMini btnGhost" type="button"
-      onclick="generarTokenEvaluacion('${s.id}')">
-      Generar evaluación
-    </button>
+
+    <div class="actions" style="margin-top:10px;">
+      <button class="btnMini btnGhost"
+        onclick="trainerExportSessionCSV('${s.id}')">
+        Exportar asistencia (CSV)
+      </button>
+
+      <button class="btnMini btnGhost"
+        onclick="generarTokenEvaluacion('${s.id}')">
+        Generar evaluación
+      </button>
+    </div>
+
+    <div class="tablelike" style="margin-top:10px;">
+      <div class="tr th">
+        <div>Empleado</div>
+        <div>Asistió</div>
+        <div>No</div>
+        <div>Tarde</div>
+      </div>
+    </div>
+
   </div>
-            <div class="tablelike" style="margin-top:10px;">
-              <div class="tr th">
-                <div>Empleado</div><div>Asistió</div><div>No</div><div>Tarde</div>
-              </div>
-            </div>
-          </div>
-        `;
+`;
       }).join("");
   // ✅ Inicializar cada sesión renderizada
   for (const s of sessions) {
@@ -2890,14 +2879,14 @@ setLog({ trainer_sessions: sessions });
     if(!sessBox) return;
   
     const table = sessBox.querySelector(".tablelike");
-    const sel = sessBox.querySelector(".dateSelect");
-  
+    if (!table) return;
+    const sel = sessBox.querySelector(".dateSelect");  
     const session_date_id = sel?.value || null;
     const fechaSeleccionada = (sel?.selectedOptions?.[0]?.textContent || "").trim();
   
     const header = table.querySelector(".tr.th");
-    table.innerHTML = "";
-    table.appendChild(header);
+table.innerHTML = "";
+if (header) table.appendChild(header);
   
     if(!session_date_id || !fechaSeleccionada){
       table.insertAdjacentHTML(
