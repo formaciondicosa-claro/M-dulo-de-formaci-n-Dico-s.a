@@ -2420,7 +2420,11 @@
     async function trainerLoadModulesInto(session_id){
     const sb = getSB();
     const box = document.querySelector(`#sess_${session_id}`);
-    const selMod = box.querySelector(".modSelect");
+if (!box) return;
+
+const selMod = box.querySelector(".modSelect");
+if (!selMod) return;
+
   
     // limpiar
     selMod.innerHTML = `<option value="">-- Selecciona módulo --</option>`;
@@ -2452,7 +2456,10 @@
   async function trainerLoadTopicsForModule(session_id, modulo){
     const sb = getSB();
     const box = document.querySelector(`#sess_${session_id}`);
-    const selTopic = box.querySelector(".topicSelect");
+if (!box) return;
+
+const selTopic = box.querySelector(".topicSelect");
+if (!selTopic) return;
   
     selTopic.innerHTML = "";
     selTopic.disabled = true;
@@ -2740,26 +2747,25 @@
       }).join("");
   // ✅ Inicializar cada sesión renderizada
   for (const s of sessions) {
-  
-    // 1️⃣ Cargar fechas reales de la sesión
-    await trainerLoadDatesInto(s.id);
-  
-    // 2️⃣ Cargar módulos según la LÍNEA de la sesión
-    await trainerLoadModulesInto(s.id);
-  
-    const box = document.querySelector(`#sess_${s.id}`);
-    const selMod = box.querySelector(".modSelect");
-    const selTopic = box.querySelector(".topicSelect");
-  
-    // 3️⃣ Cuando eligen un módulo → cargar temas
-    selMod.onchange = () => {
-      trainerLoadTopicsForModule(s.id, selMod.value);
-    };
-  
-    // 4️⃣ Cargar personas citadas (asistencia)
-    await trainerLoadCitadosInto(s.id);
-  }
-  
+
+  const box = document.querySelector(`#sess_${s.id}`);
+  if (!box) continue;
+
+  await trainerLoadDatesInto(s.id);
+  await trainerLoadModulesInto(s.id);
+
+  const selMod = box.querySelector(".modSelect");
+  if (!selMod) continue;
+
+  selMod.onchange = () => {
+    trainerLoadTopicsForModule(s.id, selMod.value);
+  };
+
+  await trainerLoadCitadosInto(s.id);
+}
+
+setStatus(`<span class="ok">Sesiones cargadas.</span>`);
+setLog({ trainer_sessions: sessions });
   
       setStatus(`<span class="ok">Sesiones cargadas.</span>`);
       setLog({ trainer_sessions: sessions });
