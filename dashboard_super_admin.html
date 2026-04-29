@@ -516,16 +516,12 @@ function setDashboardMode(mode){
 
   if (mode === "operativo") {
     // 🔵 Operativo
-    leftPanel.classList.add("hidden");     // ❌ ocultar filtros
-    grid.style.gridTemplateColumns = "1fr"; // ✅ ocupar todo
-
+   
     fiBox.classList.remove("hidden");      // ✅ mostrar resumen
     loadFormacionInicialPorEmpresa();      // ✅ cargar datos
   } 
   else {
-    // 🟣 Histórico
-    leftPanel.classList.remove("hidden");  // ✅ mostrar filtros
-    grid.style.gridTemplateColumns = "420px 1fr";
+   
 
     fiBox.classList.add("hidden");         // ❌ ocultar resumen
   }
@@ -675,8 +671,6 @@ async function loadFormacionInicialPorEmpresa(){
   const sb = getSB();
   const cont = document.getElementById("formacionInicialTable");
 
-  if (!cont) return;
-
   cont.innerHTML = `
     <div class="tr small">
       <div>Cargando...</div>
@@ -684,12 +678,14 @@ async function loadFormacionInicialPorEmpresa(){
     </div>
   `;
 
+  // 1️⃣ Personas citadas en sesiones ACTIVAS de Formación Inicial
   const { data, error } = await sb
     .from("citations")
     .select(`
       employee_id,
       employees ( empresa ),
       sessions!citations_session_id_fkey (
+        id,
         estado,
         trainings ( nombre )
       )
@@ -697,47 +693,65 @@ async function loadFormacionInicialPorEmpresa(){
     .in("sessions.estado", ["programada", "en_curso"])
     .eq("sessions.trainings.nombre", "Formación Inicial");
 
-  if (error) {
-    cont.innerHTML = `
-      <div class="tr err">
-        <div>Error cargando datos</div>
-        <div>—</div>
-      </div>
-    `;
-    return;
-  }
-
-  const conteo = new Map();
-
-  for (const r of data || []) {
-    const empresa = r.employees?.empresa || "DICO";
-    conteo.set(empresa, (conteo.get(empresa) || 0) + 1);
-  }
-
-  if (conteo.size === 0) {
+  if (!data || error) {
     cont.innerHTML = `
       <div class="tr">
-        <div class="small">Sin personal en formación inicial</div>
+        <div>Sin personal en capacitación</div>
         <div>0</div>
       </div>
     `;
     return;
   }
 
-  cont.innerHTML = "";
+  const empIds = [...new Set(data.map(x => x.employee_id))];
 
-  for (const [empresa, total] of conteo.entries()) {
+  // 2️⃣ Quitar ENTREGADOS
+  const { data: exits } = await sb
+    .from("session_exits")
+    .select("employee_id")
+    .in("employee_id", empIds);
+
+  const exitSet = new Set((exits || []).map(x => x.employee_id));
+
+  // 3️⃣ Quitar RETIRADOS
+  const { data: retiros } = await sb
+    .from("session_withdrawals")
+    .select("employee_id")
+    .in("employee_id", empIds);
+
+  const retiroSet = new Set((retiros || []).map(x => x.employee_id));
+
+  // 4️⃣ Conteo FINAL por empresa
+  const conteo = new Map();
+
+  for (const r of data) {
+    if (exitSet.has(r.employee_id)) continue;
+    if (retiroSet.has(r.employee_id)) continue;
+
+    const empresa = r.employees?.empresa || "DICO";
+    conteo.set(empresa, (conteo.get(empresa) || 0) + 1);
+  }
+
+  cont.innerHTML = "";
+  let total = 0;
+
+  for (const [empresa, n] of conteo.entries()) {
+    total += n;
     cont.innerHTML += `
-      <div class="tr" style="grid-template-columns: 1fr 120px;">
-        <div class="${empresa === "DICO" ? "info" : "warn"}">
-          ${empresa}
-        </div>
-        <div><b>${total}</b></div>
+      <div class="tr" style="grid-template-columns:1fr 120px">
+        <div class="${empresa === "DICO" ? "info" : "warn"}">${empresa}</div>
+        <div><b>${n}</b></div>
       </div>
     `;
   }
-}
 
+  cont.innerHTML += `
+    <div class="tr th" style="grid-template-columns:1fr 120px">
+      <div>TOTAL EN CAPACITACIÓN</div>
+      <div><b>${total}</b></div>
+    </div>
+  `;
+}
   
 async function initData(){
   setPill("Cargando…", "info");
