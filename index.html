@@ -2009,10 +2009,20 @@ $("btnCreateSession").onclick = adminCreateSession;
         <div class="item">
           <b>${esc(e.nombre)}</b>
           <div class="small">${esc(e.documento)} · ${esc(e.cargo || "")} · ${esc(e.area || "")}</div>
-          <div class="actions">
-            <button class="btnMini" type="button" onclick="adminAddCitation('${e.id}')">Citar a esta sesión</button>
-          </div>
-        </div>
+         <div class="actions">
+  <button class="btnMini"
+    type="button"
+    onclick="adminAddCitation('${e.id}')">
+    Citar a esta sesión
+  </button>
+
+  <button class="btnMini btnDanger"
+    type="button"
+    onclick="adminRemoveCitation('${e.id}')">
+    Quitar de sesión
+  </button>
+</div>
+</div>
       `).join("");
   
       setStatus(`<span class="ok">Resultados:</span> ${data.length}`);
@@ -2025,38 +2035,57 @@ $("btnCreateSession").onclick = adminCreateSession;
     }
   }
   
-  window.adminAddCitation = async (employee_id) => {
-    const sb = getSB();
-    const session_id = $("citeSession").value;
-    const msg = $("citeMsg");
-  
-    if(!session_id){
-      alert("Selecciona una sesión primero.");
-      return;
-    }
-  
-    msg.innerHTML = "Citando...";
-    setStatus("Guardando citación...");
-  
-    try{
-      const payload = { session_id, employee_id, estado: "citada" };
-  
-      let res = await sb.from("citations").upsert(payload, { onConflict: "session_id,employee_id" }).select("id,session_id,employee_id,estado").single();
-      if(res.error && String(res.error.message||"").toLowerCase().includes("on conflict")){
-        res = await sb.from("citations").insert(payload).select("id,session_id,employee_id,estado").single();
-      }
-      if(res.error) throw res.error;
-  
-      msg.innerHTML = `<span class="ok">Citado.</span> employee_id: <code>${esc(employee_id)}</code>`;
-      setStatus(`<span class="ok">Empleado citado.</span>`);
-      setLog({ citation_saved: res.data });
-  
-    }catch(err){
-      msg.innerHTML = `<span class="err">Error:</span> ${esc(err.message || err)}`;
-      setStatus(`<span class="err">No se pudo citar.</span>`);
-      setLog(err);
-    }
-  };
+  window.adminRemoveCitation = async (employee_id) => {
+
+  const sb = getSB();
+  const session_id = $("citeSession").value;
+
+  if(!session_id){
+    alert("Selecciona una sesión");
+    return;
+  }
+
+  if(!confirm("¿Deseas eliminar esta persona de la sesión y borrar su historial?")){
+    return;
+  }
+
+  try{
+
+    // borrar asistencias
+    await sb
+      .from("attendance_dates")
+      .delete()
+      .eq("session_id", session_id)
+      .eq("employee_id", employee_id);
+
+    // borrar entregado a operación
+    await sb
+      .from("session_exits")
+      .delete()
+      .eq("session_id", session_id)
+      .eq("employee_id", employee_id);
+
+    // borrar retirado
+    await sb
+      .from("session_withdrawals")
+      .delete()
+      .eq("session_id", session_id)
+      .eq("employee_id", employee_id);
+
+    // borrar citación
+    await sb
+      .from("citations")
+      .delete()
+      .eq("session_id", session_id)
+      .eq("employee_id", employee_id);
+
+    alert("Empleado eliminado de la sesión");
+
+  }catch(err){
+    console.error(err);
+    alert(err.message);
+  }
+};
   
   /* =====================
      ✅ CARGA MASIVA CITACIONES (CORRECCIÓN: ÚNICA FUNCIÓN, FUERA DE wireAdminHandlers)
