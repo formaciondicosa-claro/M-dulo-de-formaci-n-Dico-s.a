@@ -1430,25 +1430,41 @@ const evalMap = new Map(
   const empIds = cited.map(c => c.employee_id).filter(Boolean);
 
   // ✅ 2) consultar incapacidades activas EN ESA FECHA
-  let incMap = new Map(); // employee_id -> hasta (máxima)
-  if(empIds.length){
-    const { data: incRows, error: eInc } = await sb
-      .from("employee_incapacities")
-      .select("employee_id, desde, hasta")
-      .in("employee_id", empIds)
-      .lte("desde", fecha)
-      .gte("hasta", fecha);
+ let incMap = new Map();
 
-    if(eInc){
-      // si hay RLS o error, lo mostramos
-      $("rightMsg").innerHTML = `<span class="err">Error leyendo incapacidades:</span> ${esc(eInc.message)}`;
-    }else{
-      for(const r of (incRows || [])){
-        const prev = incMap.get(r.employee_id);
-        if(!prev || String(r.hasta) > String(prev)) incMap.set(r.employee_id, r.hasta);
+if(empIds.length){
+
+  const { data: incRows, error: eInc } = await sb
+    .from("employee_incapacities")
+    .select("employee_id, desde, hasta, observacion")
+    .in("employee_id", empIds)
+    .lte("desde", fecha)
+    .gte("hasta", fecha);
+
+  if(eInc){
+
+    $("rightMsg").innerHTML =
+      `<span class="err">Error leyendo incapacidades:</span> ${esc(eInc.message)}`;
+
+  }else{
+
+    for(const r of (incRows || [])){
+
+      const prev = incMap.get(r.employee_id);
+
+      if(
+        !prev ||
+        String(r.hasta) > String(prev.hasta)
+      ){
+        incMap.set(r.employee_id,{
+          hasta: r.hasta,
+          observacion: r.observacion || ""
+        });
       }
     }
+
   }
+}
     // ✅ 3) ENTREGADO / RETIRADO (prioridad sobre asistencia)
   // Ajusta los nombres de tabla/columna si en tu BD se llaman distinto.
   let exitMap = new Map();      // employee_id -> exit_date (última <= fecha)
@@ -1535,7 +1551,20 @@ if (ev) {
     const exitFecha = exitMap.get(c.employee_id) || null;
 
     let asistioTxt = (asistio === true) ? "Sí" : (asistio === false) ? "No" : "—";
-    let obsTxt = (estado === "tarde") ? "Tarde" : "";
+    let obsTxt = "";
+
+if(retiroFecha){
+  obsTxt = "Retiro (abandono)";
+}
+else if(exitFecha){
+  obsTxt = "Entregado a operación";
+}
+else if(tieneIncap){
+  obsTxt = incObs || "Incapacidad";
+}
+else if(estado === "tarde"){
+  obsTxt = "Tarde";
+}
 
     if(retiroFecha){
       asistioTxt = `RETIRADO (${retiroFecha})`;
@@ -1547,7 +1576,11 @@ if (ev) {
 
 
 // ✅ incapacidad (primero definimos)
-const incHasta = incMap.get(c.employee_id) || null;
+const incData = incMap.get(c.employee_id) || null;
+
+const incHasta = incData?.hasta || null;
+const incObs   = incData?.observacion || "";
+
 const tieneIncap = !!incHasta;
 const regresa = incHasta ? addDaysISO(incHasta, 1) : "";
 
