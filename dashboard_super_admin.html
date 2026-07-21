@@ -1550,7 +1550,11 @@ if (ev) {
     const retiroFecha = retiroMap.get(c.employee_id) || null;
     const exitFecha = exitMap.get(c.employee_id) || null;
 
-    
+    let asistioTxt = (asistio === true)
+  ? "Sí"
+  : (asistio === false)
+    ? "No"
+    : "—";
 
     if(retiroFecha){
       asistioTxt = `RETIRADO (${retiroFecha})`;
