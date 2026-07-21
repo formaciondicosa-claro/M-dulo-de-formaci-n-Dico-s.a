@@ -763,42 +763,9 @@
   </div>
   </div>
   
+    
       <div class="item">
-        <b>2) Crear entrenamiento</b>
-        <div class="small">Solo crea el tipo de capacitación y su duración.</div>
-  
-        <label>Nombre del entrenamiento</label>
-        <select id="trNombre">
-    <option value="">Selecciona entrenamiento...</option>
-    <option>Ascenso Técnico</option>
-    <option>Excelencia Operativa</option>
-    <option>Formación Inicial</option>
-    <option>Recertificación Operativa</option>
-    <option>Red Movil</option>
-  </select>
-  
-        <div class="row">
-          <div class="col">
-            <label>Duración (días)</label>
-            <input id="trDuracion" type="number" min="1" max="3650" value="1" />
-          </div>
-          <div class="col">
-            <label>¿Certifica?</label>
-            <select id="trCertifica">
-              <option value="true">Sí</option>
-              <option value="false">No</option>
-            </select>
-          </div>
-        </div>
-  
-        <button id="btnCreateTraining" style="margin-top:12px;width:100%;" type="button">Guardar entrenamiento</button>
-        <div id="trMsg" class="small" style="margin-top:8px;"></div>
-      </div>
-  
-      <hr/>
-  
-      <div class="item">
-        <b>3) Crear sesión</b>
+        <b>2) Crear sesión</b>
         <div class="small">
           Pegas el <code>training_id</code>. Luego el sistema genera <b>fechas reales</b> según duración.
         </div>
@@ -872,7 +839,7 @@
       <hr/>
   
       <div class="item">
-        <b>4) Citar empleados a una sesión</b>
+        <b>3) Citar empleados a una sesión</b>
         <div class="small">Selecciona sesión, busca empleado y cita.</div>
   
         <label>Sesión</label>
@@ -896,7 +863,7 @@
       <hr/>
   
       <div class="item">
-        <b>5) Registrar incapacidad (Super Admin)</b>
+        <b>4) Registrar incapacidad (Super Admin)</b>
         <div class="small">Registra incapacidad por <b>documento</b>.</div>
   
         <label>Documento</label>
@@ -927,7 +894,7 @@
       <hr/>
   
       <div class="item">
-        <b>4B) Carga masiva de citaciones (Excel/CSV)</b>
+        <b>5) Carga masiva de citaciones (Excel/CSV)</b>
         <div class="small">Archivo con columnas: <code>${CITE_HEADERS.join(", ")}</code></div>
         <div class="actions" style="margin-top:8px;">
           <button id="btnCiteTemplateCSV" class="btnMini btnGhost" type="button">Plantilla CSV</button>
