@@ -1550,21 +1550,7 @@ if (ev) {
     const retiroFecha = retiroMap.get(c.employee_id) || null;
     const exitFecha = exitMap.get(c.employee_id) || null;
 
-    let asistioTxt = (asistio === true) ? "Sí" : (asistio === false) ? "No" : "—";
-    let obsTxt = "";
-
-if(retiroFecha){
-  obsTxt = "Retiro (abandono)";
-}
-else if(exitFecha){
-  obsTxt = "Entregado a operación";
-}
-else if(tieneIncap){
-  obsTxt = incObs || "Incapacidad";
-}
-else if(estado === "tarde"){
-  obsTxt = "Tarde";
-}
+    
 
     if(retiroFecha){
       asistioTxt = `RETIRADO (${retiroFecha})`;
@@ -1583,7 +1569,20 @@ const incObs   = incData?.observacion || "";
 
 const tieneIncap = !!incHasta;
 const regresa = incHasta ? addDaysISO(incHasta, 1) : "";
+let obsTxt = "";
 
+if(retiroFecha){
+  obsTxt = "Retiro (abandono)";
+}
+else if(exitFecha){
+  obsTxt = "Entregado a operación";
+}
+else if(tieneIncap){
+  obsTxt = incObs || "Incapacidad";
+}
+else if(estado === "tarde"){
+  obsTxt = "Tarde";
+}
 
 
 let asistioTxtFinal = asistioTxt;
