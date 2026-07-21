@@ -1144,9 +1144,13 @@
       }
     };
   
-    $("btnEmpUpload").onclick = adminUploadEmployees;
-   $("btnCreateTraining").onclick = adminCreateTraining;
-    $("btnCreateSession").onclick = adminCreateSession;
+  $("btnEmpUpload").onclick = adminUploadEmployees;
+
+if ($("btnCreateTraining")) {
+    $("btnCreateTraining").onclick = adminCreateTraining;
+}
+
+$("btnCreateSession").onclick = adminCreateSession; 
     $("btnSaveDates").onclick = adminSaveSessionDates;
     $("btnRefreshAdmin").onclick = adminRefreshAll;
     $("btnSearchEmp").onclick = adminSearchEmployees;
