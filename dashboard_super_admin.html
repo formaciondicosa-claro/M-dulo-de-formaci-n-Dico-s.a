@@ -1082,6 +1082,10 @@ if(empIds.length){
 const lista = [...faltasMap.values()]
   .sort((a,b) => b.fechas.length - a.fechas.length);
 
+  console.log(
+  "FALTAS MAP",
+  [...faltasMap.entries()]
+);
 for(const r of lista){
 
   let clase = "ok";
