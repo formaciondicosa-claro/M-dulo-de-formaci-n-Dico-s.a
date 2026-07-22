@@ -978,18 +978,21 @@ async function cargarInasistenciasDesdeJS(){
 
   const cont = $("inasistenciasTable");
 
-  cont.innerHTML = `
-    <div class="tr th">
-      <div>Empleado</div>
-      <div>Documento</div>
-      <div>Fecha</div>
-    </div>
-  `;
+ cont.innerHTML = `
+  <div class="tr th">
+    <div>Empleado</div>
+    <div>Documento</div>
+    <div>Empresa</div>
+    <div>Días faltados</div>
+    <div>Fechas</div>
+  </div>
+`;
 
   // 🔥 traer entregados y retirados (igual que el resumen)
   const { exitMap, retiroMap } = await loadExitAndRetiroMaps(STATE.selectedSessionId);
 
   const hoy = new Date().toISOString().slice(0,10);
+  const faltasMap = new Map();
 
 for(const d of STATE.sessionDates){
 
@@ -1036,18 +1039,38 @@ if(empIds.length){
       const asistio = rec ? rec.asistio : null;
 
       // 🔥 CLAVE: esto arregla tu problema
-      if(asistio !== true && !incMap.get(c.employee_id)){
-        cont.innerHTML += `
-          <div class="tr">
-            <div>${emp.nombre}</div>
-<div>${emp.documento}</div>
-<div>${emp.empresa || 'DICO'}</div>
-<div>${fecha}</div>
-          </div>
-        `;
-      }
+     if(asistio !== true && !incMap.get(c.employee_id)){
+
+  if(!faltasMap.has(c.employee_id)){
+    faltasMap.set(c.employee_id,{
+      nombre: emp.nombre || "",
+      documento: emp.documento || "",
+      empresa: emp.empresa || "DICO",
+      fechas:[]
+    });
+  }
+
+  faltasMap.get(c.employee_id).fechas.push(fecha);
+}
     }
   }
+  // ✅ Pintar resultado agrupado por colaborador
+
+const lista = [...faltasMap.values()]
+  .sort((a,b) => b.fechas.length - a.fechas.length);
+
+for(const r of lista){
+
+  cont.innerHTML += `
+    <div class="tr">
+      <div>${r.nombre}</div>
+      <div>${r.documento}</div>
+      <div>${r.empresa}</div>
+      <div><b>${r.fechas.length}</b></div>
+      <div>${r.fechas.join(", ")}</div>
+    </div>
+  `;
+}
 }
 
 /* =======================
