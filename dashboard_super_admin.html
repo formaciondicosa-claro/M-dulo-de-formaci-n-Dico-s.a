@@ -1039,7 +1039,7 @@ if(empIds.length){
       const asistio = rec ? rec.asistio : null;
 
       // 🔥 CLAVE: esto arregla tu problema
-     if(asistio !== true && !incMap.get(c.employee_id)){
+     if(asistio === false && !incMap.get(c.employee_id)){
 
   if(!faltasMap.has(c.employee_id)){
     faltasMap.set(c.employee_id,{
