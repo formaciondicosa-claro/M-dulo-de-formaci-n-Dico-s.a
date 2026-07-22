@@ -142,6 +142,22 @@ code{color:#fff;}
   #absenceAlerts .tr{
   grid-template-columns: 1fr 120px 1fr 120px 120px 70px;
 }
+#inasistenciasTable .tr{
+  display:grid !important;
+  grid-template-columns:
+    minmax(250px,1.6fr)
+    130px
+    160px
+    70px !important;
+
+  gap:10px;
+  align-items:center;
+}
+
+#inasistenciasTable .tr > div{
+  min-width:0;
+  overflow-wrap:break-word;
+}
 
 /* ✅ RESUMEN POR FECHA: 6 columnas fijas */
 #summaryByDate .tr{
@@ -381,7 +397,8 @@ code{color:#fff;}
   <div class="tr th">
     <div>Empleado</div>
     <div>Documento</div>
-    <div>Fecha</div>
+    <div>Empresa</div>
+    <div>Faltas</div>
   </div>
 </div>
   <div class="small" id="sessionMeta">Selecciona una sesión a la izquierda.</div>
@@ -427,8 +444,15 @@ code{color:#fff;}
 
         <div class="tablelike" style="margin-top:10px;" id="detailTable">
   <div class="tr th">
-    <div>Empleado</div><div>Documento</div><div>Asistió</div><div>Obs.</div><div>Incap.</div><div>Regresa</div>
-  </div>
+  <div>Empleado</div>
+  <div>Documento</div>
+  <div>Empresa</div>
+  <div>Asistió</div>
+  <div>Obs.</div>
+  <div>Incap.</div>
+  <div>Regresa</div>
+  <div>Evaluación final</div>
+</div>
 </div>
 
 
@@ -978,13 +1002,12 @@ async function cargarInasistenciasDesdeJS(){
 
   const cont = $("inasistenciasTable");
 
- cont.innerHTML = `
+cont.innerHTML = `
   <div class="tr th">
     <div>Empleado</div>
     <div>Documento</div>
     <div>Empresa</div>
-    <div>Días faltados</div>
-    <div>Fechas</div>
+    <div>Faltas</div>
   </div>
 `;
 
@@ -1061,13 +1084,25 @@ const lista = [...faltasMap.values()]
 
 for(const r of lista){
 
+  let clase = "ok";
+
+  if(r.fechas.length >= 5){
+    clase = "err";
+  }else if(r.fechas.length >= 3){
+    clase = "warn";
+  }
+
   cont.innerHTML += `
     <div class="tr">
       <div>${r.nombre}</div>
       <div>${r.documento}</div>
       <div>${r.empresa}</div>
-      <div><b>${r.fechas.length}</b></div>
-      <div>${r.fechas.join(", ")}</div>
+      <div
+  class="${clase}"
+  title="${r.fechas.join(', ')}"
+>
+  <b>${r.fechas.length}</b>
+</div>
     </div>
   `;
 }
@@ -1572,23 +1607,12 @@ if (ev) {
       // ✅ prioridad: RETIRADO > ENTREGADO > INCAP > asistencia normal
     const retiroFecha = retiroMap.get(c.employee_id) || null;
     const exitFecha = exitMap.get(c.employee_id) || null;
-
-    let asistioTxt = (asistio === true)
+let asistioTxt = (asistio === true)
   ? "Sí"
   : (asistio === false)
     ? "No"
     : "—";
 
-    if(retiroFecha){
-      asistioTxt = `RETIRADO (${retiroFecha})`;
-      obsTxt = "Retiro (abandono)";
-    } else if(exitFecha){
-      asistioTxt = `ENTREGADO (${exitFecha})`;
-      obsTxt = "Entregado a operación";
-    }
-
-
-// ✅ incapacidad (primero definimos)
 const incData = incMap.get(c.employee_id) || null;
 
 const incHasta = incData?.hasta || null;
@@ -1596,12 +1620,15 @@ const incObs   = incData?.observacion || "";
 
 const tieneIncap = !!incHasta;
 const regresa = incHasta ? addDaysISO(incHasta, 1) : "";
+
 let obsTxt = "";
 
 if(retiroFecha){
+  asistioTxt = `RETIRADO (${retiroFecha})`;
   obsTxt = "Retiro (abandono)";
 }
 else if(exitFecha){
+  asistioTxt = `ENTREGADO (${exitFecha})`;
   obsTxt = "Entregado a operación";
 }
 else if(tieneIncap){
@@ -1610,6 +1637,7 @@ else if(tieneIncap){
 else if(estado === "tarde"){
   obsTxt = "Tarde";
 }
+ 
 
 
 let asistioTxtFinal = asistioTxt;
